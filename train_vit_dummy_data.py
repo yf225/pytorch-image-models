@@ -88,6 +88,9 @@ parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
+# Batch size
+parser.add_argument("--micro_batch_size", default=32, type=int)
+
 # Optimizer parameters
 parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
                     help='Clip gradient norm (default: None, no clipping)')
