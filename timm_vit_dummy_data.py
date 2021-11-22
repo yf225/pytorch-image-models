@@ -1,7 +1,7 @@
 # export PYTHONPATH=/mnt/home/willfeng/repos/pytorch-image-models:${PYTHONPATH}
 
-from models.helpers import build_model_with_cfg
-from models.vision_transformer import VisionTransformer
+from timm.models.helpers import build_model_with_cfg
+from timm.models.vision_transformer import VisionTransformer
 
 num_attention_heads = 16
 hidden_size = 1280
