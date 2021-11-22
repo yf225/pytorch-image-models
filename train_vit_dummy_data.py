@@ -163,13 +163,9 @@ def main():
         default_cfg={},
         representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
         **dict(
-            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads
+            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes
         )
     )
-
-    if args.num_classes is None:
-        assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
-        args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
 
     if args.local_rank == 0:
         _logger.info(
@@ -263,7 +259,6 @@ def main():
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss()
     train_loss_fn = train_loss_fn.cuda()
-    validate_loss_fn = nn.CrossEntropyLoss().cuda()
 
     try:
         for epoch in range(start_epoch, num_epochs):
