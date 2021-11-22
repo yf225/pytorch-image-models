@@ -237,10 +237,7 @@ def main():
         input_size=(3, 224, 224),
         batch_size=args.micro_batch_size * torch.distributed.get_world_size(),
         is_training=True,
-        use_prefetcher=True,
         no_aug=True,
-        pin_memory=True,
-        use_multi_epochs_loader=True,
     )
 
     # setup loss function
