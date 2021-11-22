@@ -189,9 +189,9 @@ class Attention(nn.Module):
         self.scale = head_dim ** -0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.attn_drop = nn.Dropout(attn_drop)
+        self.attn_drop = nn.Dropout(attn_drop) if attn_drop > 0. else nn.Identity()
         self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.proj_drop = nn.Dropout(proj_drop) if proj_drop > 0. else nn.Identity()
 
     def forward(self, x):
         B, N, C = x.shape
@@ -275,7 +275,7 @@ class VisionTransformer(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
-        self.pos_drop = nn.Dropout(p=drop_rate)
+        self.pos_drop = nn.Dropout(p=drop_rate) if drop_rate > 0. else nn.Identity()
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         self.blocks = nn.Sequential(*[
