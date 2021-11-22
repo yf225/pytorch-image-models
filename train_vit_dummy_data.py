@@ -128,6 +128,26 @@ class VitDummyDataset(torch.utils.data.Dataset):
         return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
 
 
+# NOTE: need this to be consistent with TF-TPU impl
+class LinearEncoder(torch.nn.Module):
+    def __init__(self, img_size, patch_size, in_chans, embed_dim):
+        super().__init__()
+        self.patch_size = patch_size
+        self.flatten_dim = self.patch_size * self.patch_size * in_chans
+        self.linear_encoder = torch.nn.Linear(
+            self.flatten_dim, embed_dim
+        )
+
+    def forward(self, input):
+        rearranged_input = einops.rearrange(
+            input,
+            "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
+            p1=self.patch_size,
+            p2=self.patch_size,
+        )
+        return self.linear_encoder(rearranged_input)
+
+
 def main():
     args = parser.parse_args()
 
@@ -174,7 +194,8 @@ def main():
         default_cfg={},
         representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
         **dict(
-            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes
+            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
+            embed_layer=LinearEncoder,
         )
     )
 
