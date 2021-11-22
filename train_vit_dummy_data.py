@@ -147,7 +147,7 @@ class PatchEncoder(torch.nn.Module):
             self.flatten_dim, embed_dim
         )
         self.position_embedding = torch.nn.Embedding(
-            num_embeddings=num_patches, embedding_dim=embed_dim
+            num_embeddings=self.num_patches, embedding_dim=embed_dim
         )
 
     def forward(self, input):
