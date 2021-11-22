@@ -310,9 +310,6 @@ def train_one_epoch(
                     value=args.clip_grad, mode=args.clip_mode)
             optimizer.step()
 
-        if model_ema is not None:
-            model_ema.update(model)
-
         torch.cuda.synchronize()
         num_updates += 1
         batch_time_m.update(time.time() - end)
