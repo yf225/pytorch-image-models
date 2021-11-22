@@ -65,8 +65,6 @@ torch.backends.cudnn.benchmark = True
 
 # Hyperparams
 
-micro_batch_size = 32  # batch size per GPU
-
 num_attention_heads = 16
 hidden_size = 1280
 num_layers = 32
@@ -118,11 +116,12 @@ parser.add_argument('--log-interval', type=int, default=1, metavar='N',
 
 
 class VitDummyDataset(torch.utils.data.Dataset):
-    def __init__(self, crop_size=224):
+    def __init__(self, dataset_size, crop_size):
+        self.dataset_size = dataset_size
         self.crop_size = crop_size
 
     def __len__(self):
-        return 10000000
+        return self.dataset_size
 
     def __getitem__(self, index):
         return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.tensor(1).to(torch.long))
@@ -230,12 +229,12 @@ def main():
         print('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
-    dataset_train = VitDummyDataset()
+    dataset_train = VitDummyDataset(1000000, image_size)
 
     loader_train = create_loader(
         dataset_train,
         input_size=(3, 224, 224),
-        batch_size=micro_batch_size * torch.distributed.get_world_size(),
+        batch_size=args.micro_batch_size * torch.distributed.get_world_size(),
         is_training=True,
         use_prefetcher=True,
         no_aug=True,
