@@ -89,6 +89,9 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 # Batch size
 parser.add_argument("--micro-batch-size", default=32, type=int)
 
+# Model impl
+parser.add_argument('--repo', type=str, help='One of ("timm", "lucidrains/vit-pytorch")')
+
 # Optimizer parameters
 parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
                     help='Clip gradient norm (default: None, no clipping)')
@@ -193,33 +196,34 @@ def main():
 
     random_seed(42, args.rank)
 
-    # model from timm repo
-    # model = build_model_with_cfg(
-    #     VisionTransformer,
-    #     "vit_huge_patch{}_{}".format(patch_size, image_size),
-    #     pretrained=False,
-    #     default_cfg={},
-    #     representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
-    #     **dict(
-    #         patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
-    #         embed_layer=LinearEncoder,
-    #     )
-    # )
-
-    # model from lucidrains/vit-pytorch repo
-    from vit_pytorch import ViT
-
-    model = ViT(
-        image_size=image_size,
-        patch_size=patch_size,
-        num_classes=num_classes,
-        dim=hidden_size,
-        depth=num_layers,
-        heads=num_attention_heads,
-        mlp_dim=4*hidden_size,
-        dropout=0.,
-        emb_dropout=0.,
-    )
+    model = None
+    if args.repo == "timm":
+        model = build_model_with_cfg(
+            VisionTransformer,
+            "vit_huge_patch{}_{}".format(patch_size, image_size),
+            pretrained=False,
+            default_cfg={},
+            representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
+            **dict(
+                patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
+                embed_layer=LinearEncoder,
+            )
+        )
+    elif args.repo == "lucidrains/vit-pytorch":
+        from vit_pytorch import ViT
+        model = ViT(
+            image_size=image_size,
+            patch_size=patch_size,
+            num_classes=num_classes,
+            dim=hidden_size,
+            depth=num_layers,
+            heads=num_attention_heads,
+            mlp_dim=4*hidden_size,
+            dropout=0.,
+            emb_dropout=0.,
+        )
+    else:
+        raise Exception("args.repo must be either timm or lucidrains/vit-pytorch")
 
     if args.local_rank == 0:
         print(
