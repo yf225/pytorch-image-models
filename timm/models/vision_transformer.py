@@ -272,8 +272,8 @@ class VisionTransformer(nn.Module):
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
+        # self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        # self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate) if drop_rate > 0. else nn.Identity()
 
@@ -307,13 +307,13 @@ class VisionTransformer(nn.Module):
         assert mode in ('jax', 'jax_nlhb', 'nlhb', '')
         head_bias = -math.log(self.num_classes) if 'nlhb' in mode else 0.
         trunc_normal_(self.pos_embed, std=.02)
-        if self.dist_token is not None:
-            trunc_normal_(self.dist_token, std=.02)
+        # if self.dist_token is not None:
+        #     trunc_normal_(self.dist_token, std=.02)
         if mode.startswith('jax'):
             # leave cls token as zeros to match jax impl
             named_apply(partial(_init_vit_weights, head_bias=head_bias, jax_impl=True), self)
         else:
-            trunc_normal_(self.cls_token, std=.02)
+            # trunc_normal_(self.cls_token, std=.02)
             self.apply(_init_vit_weights)
 
     def _init_weights(self, m):
@@ -326,13 +326,13 @@ class VisionTransformer(nn.Module):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        return {'pos_embed', 'cls_token', 'dist_token'}
+        return {'pos_embed'} # , 'cls_token', 'dist_token'}
 
     def get_classifier(self):
-        if self.dist_token is None:
-            return self.head
-        else:
-            return self.head, self.head_dist
+        # if self.dist_token is None:
+        #     return self.head
+        # else:
+        return self.head, self.head_dist
 
     def reset_classifier(self, num_classes, global_pool=''):
         self.num_classes = num_classes
@@ -452,7 +452,7 @@ def _load_weights(model: VisionTransformer, checkpoint_path: str, prefix: str = 
             model.patch_embed.proj.weight.shape[1], _n2p(w[f'{prefix}embedding/kernel']))
     model.patch_embed.proj.weight.copy_(embed_conv_w)
     model.patch_embed.proj.bias.copy_(_n2p(w[f'{prefix}embedding/bias']))
-    model.cls_token.copy_(_n2p(w[f'{prefix}cls'], t=False))
+    # model.cls_token.copy_(_n2p(w[f'{prefix}cls'], t=False))
     pos_embed_w = _n2p(w[f'{prefix}Transformer/posembed_input/pos_embedding'], t=False)
     if pos_embed_w.shape != model.pos_embed.shape:
         pos_embed_w = resize_pos_embed(  # resize pos embedding when different size from pretrained weights
