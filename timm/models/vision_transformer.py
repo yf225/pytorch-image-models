@@ -330,9 +330,9 @@ class VisionTransformer(nn.Module):
 
     def get_classifier(self):
         # if self.dist_token is None:
-        #     return self.head
+        return self.head
         # else:
-        return self.head, self.head_dist
+        #     return self.head, self.head_dist
 
     def reset_classifier(self, num_classes, global_pool=''):
         self.num_classes = num_classes
@@ -351,9 +351,9 @@ class VisionTransformer(nn.Module):
         x = self.blocks(x)
         x = self.norm(x)
         # if self.dist_token is None:
-        #     return self.pre_logits(x[:, 0])
+        return self.pre_logits(x[:, 0])
         # else:
-        return x[:, 0], x[:, 1]
+        #     return x[:, 0], x[:, 1]
 
     def forward(self, x):
         x = self.forward_features(x)
