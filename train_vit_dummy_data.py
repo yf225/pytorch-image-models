@@ -193,16 +193,32 @@ def main():
 
     random_seed(42, args.rank)
 
-    model = build_model_with_cfg(
-        VisionTransformer,
-        "vit_huge_patch{}_{}".format(patch_size, image_size),
-        pretrained=False,
-        default_cfg={},
-        representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
-        **dict(
-            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
-            embed_layer=LinearEncoder,
-        )
+    # model from timm repo
+    # model = build_model_with_cfg(
+    #     VisionTransformer,
+    #     "vit_huge_patch{}_{}".format(patch_size, image_size),
+    #     pretrained=False,
+    #     default_cfg={},
+    #     representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
+    #     **dict(
+    #         patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
+    #         embed_layer=LinearEncoder,
+    #     )
+    # )
+
+    # model from lucidrains/vit-pytorch repo
+    from vit_pytorch import ViT
+
+    model = ViT(
+        image_size=image_size,
+        patch_size=patch_size,
+        num_classes=num_classes,
+        dim=hidden_size,
+        depth=num_layers,
+        heads=num_attention_heads,
+        mlp_dim=4*hidden_size,
+        dropout=0.,
+        emb_dropout=0.,
     )
 
     if args.local_rank == 0:
@@ -210,13 +226,12 @@ def main():
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
-    model.cuda()
+    model = model.cuda()
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
     if args.torchscript:
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
-        assert not args.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
         model = torch.jit.script(model)
 
     optimizer = create_optimizer_v2(model, 'adam')
