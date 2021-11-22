@@ -133,19 +133,22 @@ class VitDummyDataset(torch.utils.data.Dataset):
 
 
 # NOTE: need this to be consistent with TF-TPU impl
-class LinearEncoder(torch.nn.Module):
+class PatchEncoder(torch.nn.Module):
     def __init__(self, img_size, patch_size, in_chans, embed_dim):
         super().__init__()
         img_size = (img_size, img_size)
         patch_size = (patch_size, patch_size)
         self.patch_size = patch_size
         self.flatten_dim = self.patch_size[0] * self.patch_size[1] * in_chans
-        self.linear_encoder = torch.nn.Linear(
-            self.flatten_dim, embed_dim
-        )
         self.img_size = img_size
         self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
         self.num_patches = self.grid_size[0] * self.grid_size[1]
+        self.projection = torch.nn.Linear(
+            self.flatten_dim, embed_dim
+        )
+        self.position_embedding = torch.nn.Embedding(
+            num_embeddings=num_patches, embedding_dim=embed_dim
+        )
 
     def forward(self, input):
         rearranged_input = einops.rearrange(
@@ -154,7 +157,9 @@ class LinearEncoder(torch.nn.Module):
             p1=self.patch_size[0],
             p2=self.patch_size[1],
         )
-        return self.linear_encoder(rearranged_input)
+        positions = torch.arange(start=0, end=self.num_patches, step=1)
+        encoded = self.projection(rearranged_input) + self.position_embedding(positions)
+        return encoded
 
 
 def main():
@@ -206,7 +211,7 @@ def main():
             representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
             **dict(
                 patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
-                embed_layer=LinearEncoder,
+                embed_layer=PatchEncoder,
             )
         )
     elif args.repo == "lucidrains/vit-pytorch":
