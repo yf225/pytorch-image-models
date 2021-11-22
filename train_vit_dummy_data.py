@@ -116,15 +116,16 @@ parser.add_argument('--log-interval', type=int, default=1, metavar='N',
 
 
 class VitDummyDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_size, crop_size):
+    def __init__(self, dataset_size, crop_size, num_classes):
         self.dataset_size = dataset_size
         self.crop_size = crop_size
+        self.num_classes = num_classes
 
     def __len__(self):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.tensor(1).to(torch.long))
+        return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(num_classes).to(torch.long))
 
 
 def main():
