@@ -154,7 +154,7 @@ def main():
         _logger.warning("Neither APEX or native Torch AMP is available, using float32. "
                         "Install NVIDA apex or upgrade to PyTorch 1.6")
 
-    random_seed(1234, args.rank)
+    random_seed(42, args.rank)
 
     model = build_model_with_cfg(
         VisionTransformer,
