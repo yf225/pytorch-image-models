@@ -253,8 +253,6 @@ def main():
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
     except KeyboardInterrupt:
         pass
-    if best_metric is not None:
-        print('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
 
 
 def train_one_epoch(
