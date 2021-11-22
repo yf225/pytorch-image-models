@@ -126,7 +126,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return {
             "image": torch.rand(3, self.crop_size, self.crop_size).to(torch.half),
-            "label": torch.tensor(1.).to(torch.half),
+            "label": torch.tensor(1).to(torch.long),
         }
 
 
