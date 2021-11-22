@@ -117,7 +117,7 @@ parser.add_argument('--torchscript', dest='torchscript', action='store_true',
 
 
 def main():
-    args, args_text = _parse_args()
+    args = parser.parse_args()
 
     args.prefetcher = not args.no_prefetcher
     args.distributed = False
