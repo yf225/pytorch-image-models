@@ -251,17 +251,6 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
-
-            if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
-                if args.local_rank == 0:
-                    print("Distributing BatchNorm running means and vars")
-                distribute_bn(model, args.world_size, args.dist_bn == 'reduce')
-
-            if saver is not None:
-                # save proper checkpoint with eval metric
-                save_metric = eval_metrics[eval_metric]
-                best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
-
     except KeyboardInterrupt:
         pass
     if best_metric is not None:
