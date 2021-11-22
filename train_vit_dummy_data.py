@@ -171,17 +171,6 @@ def main():
         _logger.info(
             f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
 
-    # setup augmentation batch splits for contrastive loss or split bn
-    num_aug_splits = 0
-    if args.aug_splits > 0:
-        assert args.aug_splits > 1, 'A split of 1 makes no sense'
-        num_aug_splits = args.aug_splits
-
-    # enable split bn (separate bn stats per batch-portion)
-    if args.split_bn:
-        assert num_aug_splits > 1 or args.resplit
-        model = convert_splitbn_model(model, max(num_aug_splits, 2))
-
     # move model to GPU, enable channels last layout if set
     model.cuda()
     if args.channels_last:
