@@ -157,7 +157,7 @@ class PatchEncoder(torch.nn.Module):
             p1=self.patch_size[0],
             p2=self.patch_size[1],
         )
-        positions = torch.arange(start=0, end=self.num_patches, step=1)
+        positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
         encoded = self.projection(rearranged_input) + self.position_embedding(positions)
         return encoded
 
