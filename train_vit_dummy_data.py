@@ -169,7 +169,7 @@ def main():
 
     if args.local_rank == 0:
         _logger.info(
-            f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
+            f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
     model.cuda()
