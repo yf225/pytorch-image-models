@@ -210,6 +210,7 @@ def main():
     else:
         if args.local_rank == 0:
             print('AMP not enabled. Training in float32.')
+    loss_scaler = None  # HACK
 
     # setup distributed training
     if args.distributed:
