@@ -66,7 +66,7 @@ _logger = logging.getLogger('train')
 
 # Hyperparams
 
-micro_batch_size = 32  # batch size per GPU
+micro_batch_size = 16  # batch size per GPU
 
 num_attention_heads = 16
 hidden_size = 1280
