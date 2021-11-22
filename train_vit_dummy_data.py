@@ -132,8 +132,10 @@ class VitDummyDataset(torch.utils.data.Dataset):
 class LinearEncoder(torch.nn.Module):
     def __init__(self, img_size, patch_size, in_chans, embed_dim):
         super().__init__()
+        img_size = (img_size, img_size)
+        patch_size = (patch_size, patch_size)
         self.patch_size = patch_size
-        self.flatten_dim = self.patch_size * self.patch_size * in_chans
+        self.flatten_dim = self.patch_size[0] * self.patch_size[1] * in_chans
         self.linear_encoder = torch.nn.Linear(
             self.flatten_dim, embed_dim
         )
@@ -145,8 +147,8 @@ class LinearEncoder(torch.nn.Module):
         rearranged_input = einops.rearrange(
             input,
             "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
-            p1=self.patch_size,
-            p2=self.patch_size,
+            p1=self.patch_size[0],
+            p2=self.patch_size[1],
         )
         return self.linear_encoder(rearranged_input)
 
