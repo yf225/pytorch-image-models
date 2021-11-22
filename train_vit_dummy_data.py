@@ -137,6 +137,9 @@ class LinearEncoder(torch.nn.Module):
         self.linear_encoder = torch.nn.Linear(
             self.flatten_dim, embed_dim
         )
+        self.img_size = img_size
+        self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
+        self.num_patches = self.grid_size[0] * self.grid_size[1]
 
     def forward(self, input):
         rearranged_input = einops.rearrange(
