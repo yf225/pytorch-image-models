@@ -230,7 +230,7 @@ def main():
         print('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
-    dataset_train = VitDummyDataset(args.micro_batch_size * torch.distributed.get_world_size() * 4, image_size)
+    dataset_train = VitDummyDataset(args.micro_batch_size * torch.distributed.get_world_size() * 4, image_size, num_classes)
 
     loader_train = create_loader(
         dataset_train,
