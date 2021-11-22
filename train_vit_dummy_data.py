@@ -66,6 +66,8 @@ _logger = logging.getLogger('train')
 
 # Hyperparams
 
+micro_batch_size = 32  # batch size per GPU
+
 num_attention_heads = 16
 hidden_size = 1280
 num_layers = 32
@@ -238,7 +240,7 @@ def main():
     loader_train = create_loader(
         dataset_train,
         input_size=(3, 224, 224),
-        batch_size=global_batch_size,
+        batch_size=micro_batch_size * torch.distributed.get_world_size(),
         is_training=True,
         use_prefetcher=True,
         no_aug=True,
