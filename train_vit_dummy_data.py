@@ -66,7 +66,7 @@ _logger = logging.getLogger('train')
 
 # Hyperparams
 
-micro_batch_size = 16  # batch size per GPU
+micro_batch_size = 32  # batch size per GPU
 
 num_attention_heads = 16
 hidden_size = 1280
@@ -95,27 +95,24 @@ parser.add_argument('--clip-mode', type=str, default='norm',
                     help='Gradient clipping mode. One of ("norm", "value", "agc")')
 
 # Misc
-parser.add_argument('--log-interval', type=int, default=50, metavar='N',
-                    help='how many batches to wait before logging training status')
 parser.add_argument('--amp', action='store_true', default=False,
                     help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 parser.add_argument('--apex-amp', action='store_true', default=False,
                     help='Use NVIDIA Apex AMP mixed precision')
 parser.add_argument('--native-amp', action='store_true', default=False,
                     help='Use Native Torch AMP mixed precision')
-parser.add_argument('--no-ddp-bb', action='store_true', default=False,
-                    help='Force broadcast buffers for native DDP to off.')
 parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
 parser.add_argument('--pin-mem', action='store_true', default=False,
                     help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
-parser.add_argument('--no-prefetcher', action='store_true', default=False,
-                    help='disable fast prefetcher')
 parser.add_argument("--local_rank", default=0, type=int)
 parser.add_argument('--use-multi-epochs-loader', action='store_true', default=False,
                     help='use the multi-epochs-loader to save time at the beginning of every epoch')
 parser.add_argument('--torchscript', dest='torchscript', action='store_true',
                     help='convert model torchscript for inference')
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
+                    help='how many batches to wait before logging training status')
+
 
 
 class VitDummyDataset(torch.utils.data.Dataset):
@@ -132,7 +129,6 @@ class VitDummyDataset(torch.utils.data.Dataset):
 def main():
     args = parser.parse_args()
 
-    args.prefetcher = not args.no_prefetcher
     args.distributed = False
     if 'WORLD_SIZE' in os.environ:
         args.distributed = int(os.environ['WORLD_SIZE']) > 1
