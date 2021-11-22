@@ -116,6 +116,20 @@ parser.add_argument('--torchscript', dest='torchscript', action='store_true',
                     help='convert model torchscript for inference')
 
 
+class VitDummyDataset(torch.utils.data.Dataset):
+    def __init__(self, crop_size=224):
+        self.crop_size = crop_size
+
+    def __len__(self):
+        return 10000000
+
+    def __getitem__(self, index):
+        return {
+            "image": torch.rand(3, self.crop_size, self.crop_size).to(torch.half),
+            "label": torch.tensor(1.).to(torch.half),
+        }
+
+
 def main():
     args = parser.parse_args()
 
@@ -219,7 +233,7 @@ def main():
         _logger.info('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
-    dataset_train = TODO
+    dataset_train = VitDummyDataset()
 
     loader_train = create_loader(
         dataset_train,
