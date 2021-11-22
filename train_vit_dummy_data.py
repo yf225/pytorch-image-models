@@ -222,7 +222,7 @@ def main():
         else:
             if args.local_rank == 0:
                 _logger.info("Using native Torch DistributedDataParallel.")
-            model = NativeDDP(model, device_ids=[args.local_rank], broadcast_buffers=not args.no_ddp_bb)
+            model = NativeDDP(model, device_ids=[args.local_rank])
         # NOTE: EMA model does not need to be wrapped by DDP
 
     start_epoch = 0
