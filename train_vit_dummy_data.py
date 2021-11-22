@@ -61,7 +61,6 @@ except ImportError:
     has_wandb = False
 
 torch.backends.cudnn.benchmark = True
-_logger = logging.getLogger('train')
 
 
 # Hyperparams
@@ -144,10 +143,10 @@ def main():
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
         args.world_size = torch.distributed.get_world_size()
         args.rank = torch.distributed.get_rank()
-        _logger.info('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
+        print('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
                      % (args.rank, args.world_size))
     else:
-        _logger.info('Training with a single process on 1 GPUs.')
+        print('Training with a single process on 1 GPUs.')
     assert args.rank >= 0
 
     # resolve AMP arguments based on PyTorch / Apex availability
@@ -163,7 +162,7 @@ def main():
     elif args.native_amp and has_native_amp:
         use_amp = 'native'
     elif args.apex_amp or args.native_amp:
-        _logger.warning("Neither APEX or native Torch AMP is available, using float32. "
+        print("Neither APEX or native Torch AMP is available, using float32. "
                         "Install NVIDA apex or upgrade to PyTorch 1.6")
 
     random_seed(42, args.rank)
@@ -180,7 +179,7 @@ def main():
     )
 
     if args.local_rank == 0:
-        _logger.info(
+        print(
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
@@ -202,33 +201,33 @@ def main():
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
         loss_scaler = ApexScaler()
         if args.local_rank == 0:
-            _logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
+            print('Using NVIDIA APEX AMP. Training in mixed precision.')
     elif use_amp == 'native':
         amp_autocast = torch.cuda.amp.autocast
         loss_scaler = NativeScaler()
         if args.local_rank == 0:
-            _logger.info('Using native Torch AMP. Training in mixed precision.')
+            print('Using native Torch AMP. Training in mixed precision.')
     else:
         if args.local_rank == 0:
-            _logger.info('AMP not enabled. Training in float32.')
+            print('AMP not enabled. Training in float32.')
 
     # setup distributed training
     if args.distributed:
         if has_apex and use_amp == 'apex':
             # Apex DDP preferred unless native amp is activated
             if args.local_rank == 0:
-                _logger.info("Using NVIDIA APEX DistributedDataParallel.")
+                print("Using NVIDIA APEX DistributedDataParallel.")
             model = ApexDDP(model, delay_allreduce=True)
         else:
             if args.local_rank == 0:
-                _logger.info("Using native Torch DistributedDataParallel.")
+                print("Using native Torch DistributedDataParallel.")
             model = NativeDDP(model, device_ids=[args.local_rank])
         # NOTE: EMA model does not need to be wrapped by DDP
 
     start_epoch = 0
 
     if args.local_rank == 0:
-        _logger.info('Scheduled epochs: {}'.format(num_epochs))
+        print('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
     dataset_train = VitDummyDataset()
@@ -256,7 +255,7 @@ def main():
 
             if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
                 if args.local_rank == 0:
-                    _logger.info("Distributing BatchNorm running means and vars")
+                    print("Distributing BatchNorm running means and vars")
                 distribute_bn(model, args.world_size, args.dist_bn == 'reduce')
 
             if saver is not None:
@@ -267,7 +266,7 @@ def main():
     except KeyboardInterrupt:
         pass
     if best_metric is not None:
-        _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
+        print('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
 
 
 def train_one_epoch(
@@ -327,7 +326,7 @@ def train_one_epoch(
                 losses_m.update(reduced_loss.item(), input.size(0))
 
             if args.local_rank == 0:
-                _logger.info(
+                print(
                     'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
                     'Loss: {loss.val:#.4g} ({loss.avg:#.3g})  '
                     'Time: {batch_time.val:.3f}s, {rate:>7.2f}/s  '
