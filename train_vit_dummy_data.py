@@ -99,6 +99,8 @@ parser.add_argument('--clip-mode', type=str, default='norm',
                     help='Gradient clipping mode. One of ("norm", "value", "agc")')
 
 # Misc
+parser.add_argument('--fp16', action='store_true', default=False,
+                    help='move everything to fp16. Used for roofline analysis.')
 parser.add_argument('--amp', action='store_true', default=False,
                     help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 parser.add_argument('--apex-amp', action='store_true', default=False,
@@ -234,6 +236,10 @@ def main():
         print(
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
+    if args.fp16:
+        model = model.to(torch.half)
+        use_amp = None
+
     # move model to GPU, enable channels last layout if set
     model = model.cuda()
     if args.channels_last:
@@ -260,8 +266,7 @@ def main():
             print('Using native Torch AMP. Training in mixed precision.')
     else:
         if args.local_rank == 0:
-            print('AMP not enabled. Training in float32.')
-    loss_scaler = None  # HACK
+            print('AMP not enabled.')
 
     # setup distributed training
     if args.distributed:
@@ -290,10 +295,13 @@ def main():
         batch_size=args.micro_batch_size * torch.distributed.get_world_size(),
         is_training=True,
         no_aug=True,
+        fp16=args.fp16,
     )
 
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss()
+    if args.fp16:
+        train_loss_fn = train_loss_fn.to(torch.half)
     train_loss_fn = train_loss_fn.cuda()
 
     try:
@@ -322,6 +330,8 @@ def train_one_epoch(
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
+        if args.fp16:
+            input = input.to(torch.half)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
