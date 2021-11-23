@@ -265,6 +265,7 @@ def main():
         if args.local_rank == 0:
             print('Using native Torch AMP. Training in mixed precision.')
     else:
+        loss_scaler = NativeScaler()
         if args.local_rank == 0:
             print('AMP not enabled.')
 
