@@ -181,7 +181,7 @@ default_cfgs = {
 }
 
 
-class Attention(nn.Module):
+class MultiHeadSelfAttention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
         super().__init__()
         self.num_heads = num_heads
@@ -218,7 +218,7 @@ class Block(nn.Module):
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
         super().__init__()
         self.norm1 = norm_layer(dim)
-        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+        self.attn = MultiHeadSelfAttention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else lambda x: x
         self.norm2 = norm_layer(dim)
@@ -301,9 +301,9 @@ class VisionTransformer(nn.Module):
 
         # Classifier head(s)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else lambda x: x
-        self.head_dist = None
-        if distilled:
-            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
+        # self.head_dist = None
+        # if distilled:
+        #     self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
 
         self.init_weights(weight_init)
 
@@ -341,8 +341,8 @@ class VisionTransformer(nn.Module):
     def reset_classifier(self, num_classes, global_pool=''):
         self.num_classes = num_classes
         self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else lambda x: x
-        if self.num_tokens == 2:
-            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
+        # if self.num_tokens == 2:
+        #     self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
 
     def forward_features(self, x):
         x = self.patch_embed(x)
@@ -361,15 +361,15 @@ class VisionTransformer(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-        if self.head_dist is not None:
-            x, x_dist = self.head(x[0]), self.head_dist(x[1])  # x must be a tuple
-            if self.training and not torch.jit.is_scripting():
-                # during inference, return the average of both classifier predictions
-                return x, x_dist
-            else:
-                return (x + x_dist) / 2
-        else:
-            x = self.head(x)
+        # if self.head_dist is not None:
+        #     x, x_dist = self.head(x[0]), self.head_dist(x[1])  # x must be a tuple
+        #     if self.training and not torch.jit.is_scripting():
+        #         # during inference, return the average of both classifier predictions
+        #         return x, x_dist
+        #     else:
+        #         return (x + x_dist) / 2
+        # else:
+        x = self.head(x)
         return x
 
 
