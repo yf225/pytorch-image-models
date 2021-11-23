@@ -149,7 +149,7 @@ class PatchEncoder(torch.nn.Module):
         )
 
     def forward(self, input):
-        rearranged_input = input.view(-1, self.grid_size * self.grid_size, self.patch_size[0] * self.patch_size[1] * self.in_chans)
+        rearranged_input = input.view(-1, self.grid_size[0] * self.grid_size[1], self.patch_size[0] * self.patch_size[1] * self.in_chans)
         # rearranged_input = einops.rearrange(
         #     input,
         #     "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
