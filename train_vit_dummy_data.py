@@ -100,6 +100,8 @@ parser.add_argument('--amp', action='store_true', default=False,
                     help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 parser.add_argument('--apex-amp', action='store_true', default=False,
                     help='Use NVIDIA Apex AMP mixed precision')
+parser.add_argument('--apex-amp-opt-level', type=str, default='O1',
+                    help='NVIDIA Apex AMP optimization level ("O0", "O1", "O2", "O3")')
 parser.add_argument('--native-amp', action='store_true', default=False,
                     help='Use Native Torch AMP mixed precision')
 parser.add_argument('--channels-last', action='store_true', default=False,
@@ -231,7 +233,7 @@ def main():
     amp_autocast = suppress  # do nothing
     loss_scaler = None
     if use_amp == 'apex':
-        model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
         loss_scaler = ApexScaler()
         if args.local_rank == 0:
             print('Using NVIDIA APEX AMP. Training in mixed precision.')
