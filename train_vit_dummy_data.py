@@ -136,6 +136,7 @@ class PatchEncoder(torch.nn.Module):
         img_size = (img_size, img_size)
         patch_size = (patch_size, patch_size)
         self.patch_size = patch_size
+        self.in_chans = in_chans
         self.flatten_dim = self.patch_size[0] * self.patch_size[1] * in_chans
         self.img_size = img_size
         self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
@@ -148,14 +149,14 @@ class PatchEncoder(torch.nn.Module):
         )
 
     def forward(self, input):
-        rearranged_input = einops.rearrange(
-            input,
-            "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
-            p1=self.patch_size[0],
-            p2=self.patch_size[1],
-        )
-        with torch.no_grad():
-            positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
+        rearranged_input = input.view(-1, self.grid_size * self.grid_size, self.patch_size[0] * self.patch_size[1] * self.in_chans)
+        # rearranged_input = einops.rearrange(
+        #     input,
+        #     "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
+        #     p1=self.patch_size[0],
+        #     p2=self.patch_size[1],
+        # )
+        positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
         encoded = self.projection(rearranged_input) + self.position_embedding(positions)
         return encoded
 
@@ -218,8 +219,7 @@ def main():
     # move model to GPU, enable channels last layout if set
     model = model.cuda()
     if args.channels_last:
-        with torch.no_grad():
-            model = model.to(memory_format=torch.channels_last)
+        model = model.to(memory_format=torch.channels_last)
 
     if args.torchscript:
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
