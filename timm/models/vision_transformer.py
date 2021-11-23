@@ -192,9 +192,9 @@ class Attention(nn.Module):
         self.query_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
         self.key_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
         self.value_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
-        self.attn_drop = nn.Dropout(attn_drop) if attn_drop > 0. else nn.Identity()
+        self.attn_drop = nn.Dropout(attn_drop) if attn_drop > 0. else lambda x: x
         self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(proj_drop) if proj_drop > 0. else nn.Identity()
+        self.proj_drop = nn.Dropout(proj_drop) if proj_drop > 0. else lambda x: x
 
     def forward(self, x):
         B, N, C = x.shape
@@ -220,7 +220,7 @@ class Block(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else lambda x: x
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -279,7 +279,7 @@ class VisionTransformer(nn.Module):
         # self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         # self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
-        self.pos_drop = nn.Dropout(p=drop_rate) if drop_rate > 0. else nn.Identity()
+        self.pos_drop = nn.Dropout(p=drop_rate) if drop_rate > 0. else lambda x: x
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         self.blocks = nn.Sequential(*[
@@ -297,13 +297,13 @@ class VisionTransformer(nn.Module):
                 ('act', nn.Tanh())
             ]))
         else:
-            self.pre_logits = nn.Identity()
+            self.pre_logits = lambda x: x
 
         # Classifier head(s)
-        self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
+        self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else lambda x: x
         self.head_dist = None
         if distilled:
-            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else nn.Identity()
+            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
 
         self.init_weights(weight_init)
 
@@ -340,9 +340,9 @@ class VisionTransformer(nn.Module):
 
     def reset_classifier(self, num_classes, global_pool=''):
         self.num_classes = num_classes
-        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else lambda x: x
         if self.num_tokens == 2:
-            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else nn.Identity()
+            self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else lambda x: x
 
     def forward_features(self, x):
         x = self.patch_embed(x)
