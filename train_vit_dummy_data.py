@@ -131,7 +131,8 @@ class VitDummyDataset(torch.utils.data.Dataset):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
+        with torch.no_grad():
+            return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -159,7 +160,8 @@ class PatchEncoder(torch.nn.Module):
             p1=self.patch_size[0],
             p2=self.patch_size[1],
         )
-        positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
+        with torch.no_grad():
+            positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
         encoded = self.projection(rearranged_input) + self.position_embedding(positions)
         return encoded
 
@@ -237,13 +239,15 @@ def main():
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     if args.fp16:
-        model = model.to(torch.half)
+        with torch.no_grad():
+            model = model.to(torch.half)
         use_amp = None
 
     # move model to GPU, enable channels last layout if set
     model = model.cuda()
     if args.channels_last:
-        model = model.to(memory_format=torch.channels_last)
+        with torch.no_grad():
+            model = model.to(memory_format=torch.channels_last)
 
     if args.torchscript:
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
@@ -302,7 +306,8 @@ def main():
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss()
     if args.fp16:
-        train_loss_fn = train_loss_fn.to(torch.half)
+        with torch.no_grad():
+            train_loss_fn = train_loss_fn.to(torch.half)
     train_loss_fn = train_loss_fn.cuda()
 
     try:
@@ -332,7 +337,8 @@ def train_one_epoch(
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if args.fp16:
-            input = input.to(torch.half)
+            with torch.no_grad():
+                input = input.to(torch.half)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
