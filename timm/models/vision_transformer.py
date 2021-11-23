@@ -189,9 +189,9 @@ class Attention(nn.Module):
         self.scale = head_dim ** -0.5
 
         # self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.query_dense = nn.Linear(hidden_size, bias=qkv_bias)
-        self.key_dense = nn.Linear(hidden_size, bias=qkv_bias)
-        self.value_dense = nn.Linear(hidden_size, bias=qkv_bias)
+        self.query_dense = nn.Linear(dim, bias=qkv_bias)
+        self.key_dense = nn.Linear(dim, bias=qkv_bias)
+        self.value_dense = nn.Linear(dim, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop) if attn_drop > 0. else nn.Identity()
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop) if proj_drop > 0. else nn.Identity()
