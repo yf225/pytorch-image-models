@@ -256,7 +256,7 @@ def main():
         else:
             if args.local_rank == 0:
                 print("Using native Torch DistributedDataParallel.")
-            model = NativeDDP(model, device_ids=[args.local_rank], find_unused_parameters=True)
+            model = NativeDDP(model, device_ids=[args.local_rank])
         # NOTE: EMA model does not need to be wrapped by DDP
 
     start_epoch = 0
