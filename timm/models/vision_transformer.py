@@ -181,7 +181,7 @@ default_cfgs = {
 }
 
 
-class MultiHeadSelfAttention(nn.Module):
+class Attention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
         super().__init__()
         self.num_heads = num_heads
