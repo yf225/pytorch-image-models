@@ -96,7 +96,9 @@ parser.add_argument('--torchscript', dest='torchscript', action='store_true',
 parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='how many batches to wait before logging training status')
 
-
+def print_if_verbose(msg):
+    if VERBOSE:
+        print(msg, flush=True)
 
 class VitDummyDataset(torch.utils.data.Dataset):
     def __init__(self, dataset_size, crop_size, num_classes):
@@ -159,10 +161,10 @@ def main():
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
         args.world_size = torch.distributed.get_world_size()
         args.rank = torch.distributed.get_rank()
-        print('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
+        print_if_verbose('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
                      % (args.rank, args.world_size))
     else:
-        print('Training with a single process on 1 GPUs.')
+        print_if_verbose('Training with a single process on 1 GPUs.')
     assert args.rank >= 0
 
     # resolve AMP arguments based on PyTorch / Apex availability
@@ -178,7 +180,7 @@ def main():
     elif args.native_amp and has_native_amp:
         use_amp = 'native'
     elif args.apex_amp or args.native_amp:
-        print("Neither APEX or native Torch AMP is available, using float32. "
+        print_if_verbose("Neither APEX or native Torch AMP is available, using float32. "
                         "Install NVIDA apex or upgrade to PyTorch 1.6")
 
     random_seed(42, args.rank)
@@ -196,7 +198,7 @@ def main():
     )
 
     if args.local_rank == 0:
-        print(
+        print_if_verbose(
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
@@ -217,33 +219,33 @@ def main():
         model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
         loss_scaler = ApexScaler()
         if args.local_rank == 0:
-            print('Using NVIDIA APEX AMP. Training in mixed precision.')
+            print_if_verbose('Using NVIDIA APEX AMP. Training in mixed precision.')
     elif use_amp == 'native':
         amp_autocast = torch.cuda.amp.autocast
         loss_scaler = NativeScaler()
         if args.local_rank == 0:
-            print('Using native Torch AMP. Training in mixed precision.')
+            print_if_verbose('Using native Torch AMP. Training in mixed precision.')
     else:
         if args.local_rank == 0:
-            print('AMP not enabled.')
+            print_if_verbose('AMP not enabled.')
 
     # setup distributed training
     if args.distributed:
         if has_apex and use_amp == 'apex':
             # Apex DDP preferred unless native amp is activated
             if args.local_rank == 0:
-                print("Using NVIDIA APEX DistributedDataParallel.")
+                print_if_verbose("Using NVIDIA APEX DistributedDataParallel.")
             model = ApexDDP(model, delay_allreduce=True)
         else:
             if args.local_rank == 0:
-                print("Using native Torch DistributedDataParallel.")
+                print_if_verbose("Using native Torch DistributedDataParallel.")
             model = NativeDDP(model, device_ids=[args.local_rank], find_unused_parameters=True)
         # NOTE: EMA model does not need to be wrapped by DDP
 
     start_epoch = 0
 
     if args.local_rank == 0:
-        print('Scheduled epochs: {}'.format(num_epochs))
+        print_if_verbose('Scheduled epochs: {}'.format(num_epochs))
 
     # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * torch.distributed.get_world_size() * 4, image_size, num_classes)
@@ -265,7 +267,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
-        print("mean step duration: {:.3f}".format(statistics.median(step_duration_list)))
+        print("apex amp opt level: {}, micro_batch_size: {}, mean step duration: {:.3f}".format(args.apex_amp_opt_level, micro_batch_size, statistics.median(step_duration_list)))
     except KeyboardInterrupt:
         pass
 
@@ -326,7 +328,7 @@ def train_one_epoch(
                 losses_m.update(reduced_loss.item(), input.size(0))
 
             if args.local_rank == 0:
-                print(
+                print_if_verbose(
                     'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
                     'Loss: {loss.val:#.4g} ({loss.avg:#.3g})  '
                     'Time: {batch_time.val:.3f}s, {rate:>7.2f}/s  '
