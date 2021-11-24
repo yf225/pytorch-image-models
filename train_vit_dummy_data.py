@@ -142,6 +142,7 @@ class PatchEncoder(torch.nn.Module):
         encoded = self.projection(rearranged_input) + self.position_embedding(positions)
         return encoded
 
+step_duration_list = []
 
 def main():
     args = parser.parse_args()
@@ -264,6 +265,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
+        print("mean step duration: {:.3f}".format(statistics.median(step_duration_list)))
     except KeyboardInterrupt:
         pass
 
@@ -282,7 +284,6 @@ def train_one_epoch(
     end = time.time()
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
-    step_duration_list = []
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
@@ -344,7 +345,6 @@ def train_one_epoch(
 
         end = time.time()
         # end for
-    print("mean step duration: {:.3f}".format(statistics.median(step_duration_list)))
 
     return OrderedDict([('loss', losses_m.avg)])
 
