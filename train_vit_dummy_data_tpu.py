@@ -1,17 +1,30 @@
+# For TPU VM
+"""
+export XRT_TPU_CONFIG="localservice;0;localhost:51011"
+
+rm -rf ./pytorch-image-models || true
+git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
+cd pytorch-image-models && git pull
+
+# References
+- https://github.com/pytorch/xla/blob/master/test/test_train_mp_imagenet.py
+- https://cloud.google.com/tpu/docs/pytorch-xla-ug-tpu-vm
+"""
+
 # Colab references
 # - https://colab.research.google.com/github/pytorch/xla/blob/master/contrib/colab/getting-started.ipynb#scrollTo=yUB12htcqU9W
 # - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
 # - https://github.com/pytorch/xla/issues/2587
 
 # === Colab 1st cell ===
-!pip uninstall -y torch || pip uninstall -y torch || pip uninstall -y torch || true
-!pip uninstall -y torchvision || true
-!pip uninstall -y torchtext || true
-!pip uninstall -y torchaudio || true
-# Have to use PyTorch 1.9 because of the following issues:
-# - https://github.com/pytorch/xla/issues/3211
-# - https://github.com/pytorch/xla/issues/3186
-!pip install cloud-tpu-client==0.10 torch==1.9.0 torchvision==0.10 https://storage.googleapis.com/tpu-pytorch/wheels/torch_xla-1.9-cp37-cp37m-linux_x86_64.whl
+# !pip uninstall -y torch || pip uninstall -y torch || pip uninstall -y torch || true
+# !pip uninstall -y torchvision || true
+# !pip uninstall -y torchtext || true
+# !pip uninstall -y torchaudio || true
+# # Have to use PyTorch 1.9 because of the following issues:
+# # - https://github.com/pytorch/xla/issues/3211
+# # - https://github.com/pytorch/xla/issues/3186
+# !pip install cloud-tpu-client==0.10 torch==1.9.0 torchvision==0.10 https://storage.googleapis.com/tpu-pytorch/wheels/torch_xla-1.9-cp37-cp37m-linux_x86_64.whl
 
 # === Colab 2nd cell ===
 import torch_xla.core.xla_model as xm
@@ -35,9 +48,9 @@ import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.test.test_utils as test_utils
 
 # === Colab 4th cell ===
-!rm -rf ./pytorch-image-models || true
-!git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
-!cd pytorch-image-models && git pull
+# !rm -rf ./pytorch-image-models || true
+# !git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
+# !cd pytorch-image-models && git pull
 
 import sys
 if './pytorch-image-models' not in sys.path:
@@ -224,5 +237,10 @@ def map_fn(index, flags):
 # Spawns eight of the map functions, one for each of the eight cores on
 # the Cloud TPU
 flags = {}
-# Note: Colab only supports start_method='fork'
-xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
+
+if 'COLAB_TPU_ADDR' in os.environ:
+  # Note: Colab only supports start_method='fork'
+  xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
+
+if __name__ == "__main__":
+  xmp.spawn(map_fn, args=(flags,), nprocs=8)
