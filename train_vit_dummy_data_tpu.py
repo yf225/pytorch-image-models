@@ -1,6 +1,7 @@
 # Colab references
 # - https://colab.research.google.com/github/pytorch/xla/blob/master/contrib/colab/getting-started.ipynb#scrollTo=yUB12htcqU9W
 # - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
+# - https://github.com/pytorch/xla/issues/2587
 
 # === Colab 1st cell ===
 !pip uninstall -y torch || pip uninstall -y torch || pip uninstall -y torch || true
@@ -163,9 +164,8 @@ def train_vit():
   optim_cls = optim.Adam
   optimizer = optim_cls(
       model.parameters(),
-      lr=FLAGS.lr
+      lr=0.001,
   )
-  num_training_steps_per_epoch = train_dataset_len // xm.xrt_world_size()
   loss_fn = nn.CrossEntropyLoss()
 
   def train_loop_fn(loader, epoch):
@@ -184,6 +184,7 @@ def train_vit():
   for epoch in range(1, num_epochs + 1):
     xm.master_print('Epoch {} train begin {}'.format(epoch, test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
+    xm.rendezvous('epoch end')
 
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
