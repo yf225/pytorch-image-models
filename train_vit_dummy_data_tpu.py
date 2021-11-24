@@ -7,7 +7,7 @@ git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
 # Cloud Shell session disconnects very frequently.
-# This saves stdout to file, to persist the output through multiple Cloud Shell sessions.
+# This saves stdout to local file on VM, to persist the output through multiple Cloud Shell sessions.
 python3 train_vit_dummy_data_tpu.py --bits=16 --micro_batch_size=2 >> output.txt
 
 # References
@@ -161,6 +161,7 @@ class PatchEncoder(torch.nn.Module):
     return encoded
 
 def train_vit():
+  xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
   train_dataset = VitDummyDataset(global_batch_size * 10, image_size, num_classes)
   # train_loader = create_loader(
