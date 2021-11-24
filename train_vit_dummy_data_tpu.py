@@ -6,6 +6,8 @@ rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
+python3 train_vit_dummy_data_tpu.py --bits=16 --micro_batch_size=2
+
 # References
 - https://github.com/pytorch/xla/blob/master/test/test_train_mp_imagenet.py
 - https://cloud.google.com/tpu/docs/pytorch-xla-ug-tpu-vm
@@ -69,7 +71,7 @@ from timm.models.vision_transformer import VisionTransformer
 
 # === Colab 5th cell ===
 
-DEBUG = False
+DEBUG = True
 VERBOSE = False
 
 num_attention_heads = 16
@@ -226,7 +228,8 @@ def map_fn(index, flags):
 
   # Acquires the (unique) Cloud TPU core corresponding to this process's index
   device = xm.xla_device()
-  print("Process", index ,"is using", xm.xla_real_devices([str(device)])[0])
+  if VERBOSE:
+    print("Process", index ,"is using", xm.xla_real_devices([str(device)])[0])
 
   # # Barrier to prevent master from exiting before workers connect.
   # xm.rendezvous('init')
