@@ -28,7 +28,6 @@ cd pytorch-image-models && git pull
 
 # === Colab 2nd cell ===
 import torch_xla.core.xla_model as xm
-assert "xla:1" in str(xm.xla_device())
 
 # === Colab 3rd cell ===
 import argparse
