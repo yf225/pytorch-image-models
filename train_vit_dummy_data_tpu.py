@@ -216,7 +216,7 @@ def train_vit():
     xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
 
-  xm.master_print("median step duration: {:.3f}".format(statistics.median(step_duration_list)))
+  xm.master_print("bits: {}, global_batch_size: {}, micro_batch_size: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
 
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
