@@ -243,4 +243,4 @@ if 'COLAB_TPU_ADDR' in os.environ:
   xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
 
 if __name__ == "__main__":
-  xmp.spawn(map_fn, args=(flags,), nprocs=8)
+  xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
