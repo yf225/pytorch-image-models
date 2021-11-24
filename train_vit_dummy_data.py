@@ -5,6 +5,7 @@ import argparse
 import time
 import os
 import logging
+import statistics
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
@@ -281,6 +282,7 @@ def train_one_epoch(
     end = time.time()
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
+    step_duration_list = []
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
@@ -321,6 +323,7 @@ def train_one_epoch(
                 losses_m.update(reduced_loss.item(), input.size(0))
 
             if args.local_rank == 0:
+                step_duration_list.append(batch_time_m.val)
                 print(
                     'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
                     'Loss: {loss.val:#.4g} ({loss.avg:#.3g})  '
@@ -340,6 +343,7 @@ def train_one_epoch(
 
         end = time.time()
         # end for
+    print("mean step duration: {:.3f}".format(statistics.median(step_duration_list)))
 
     return OrderedDict([('loss', losses_m.avg)])
 
