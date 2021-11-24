@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-""" ImageNet Training Script
-
-This is intended to be a lean and easily modifiable ImageNet training script that reproduces ImageNet
-training results with some of the latest networks and training techniques. It favours canonical PyTorch
-and standard Python style over trying to be able to 'do it all.' That said, it offers quite a few speed
-and training result improvements over the usual PyTorch example scripts. Repurpose as you see fit.
-
-This script was started from an early version of the PyTorch ImageNet example
-(https://github.com/pytorch/examples/tree/master/imagenet)
-
-NVIDIA CUDA specific speedups adopted from NVIDIA Apex examples
-(https://github.com/NVIDIA/apex/tree/master/examples/imagenet)
-
-Hacked together by / Copyright 2020 Ross Wightman (https://github.com/rwightman)
+""" ViT training script on GPU
 """
 import argparse
 import time
@@ -264,7 +251,7 @@ def main():
     if args.local_rank == 0:
         print('Scheduled epochs: {}'.format(num_epochs))
 
-    # create the train and eval datasets
+    # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * torch.distributed.get_world_size() * 4, image_size, num_classes)
 
     loader_train = create_loader(
