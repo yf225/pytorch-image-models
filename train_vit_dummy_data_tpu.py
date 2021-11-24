@@ -1,3 +1,7 @@
+# Colab references
+# - https://colab.research.google.com/github/pytorch/xla/blob/master/contrib/colab/getting-started.ipynb#scrollTo=yUB12htcqU9W
+# - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
+
 # === Colab 1st cell ===
 !pip uninstall -y torch || pip uninstall -y torch || pip uninstall -y torch || true
 !pip uninstall -y torchvision || true
@@ -64,6 +68,10 @@ num_epochs = 10
 if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
   bits = 16
   micro_batch_size = 1
+  print("Overwriting hyperparams since we are in debug mode...")
+  num_attention_heads = 1
+  hidden_size = 128
+  num_layers = 1
 else:
   parser = argparse.ArgumentParser()
   parser.add_argument("--bits", type=int)
@@ -74,6 +82,10 @@ else:
 
 global_batch_size = micro_batch_size * xm.xrt_world_size()
 
+if bits == 16:
+  default_dtype = torch.bfloat16
+else:
+  default_dtype = torch.float32
 
 class VitDummyDataset(torch.utils.data.Dataset):
   def __init__(self, dataset_size, crop_size, num_classes):
@@ -121,13 +133,14 @@ class PatchEncoder(torch.nn.Module):
 
 def train_vit():
   # create train dataset
-  dataset_train = VitDummyDataset(global_batch_size * 4, image_size, num_classes)
-  loader_train = create_loader(
-    dataset_train,
+  train_dataset = VitDummyDataset(global_batch_size * 4, image_size, num_classes)
+  train_loader = create_loader(
+    train_dataset,
     input_size=(3, 224, 224),
     batch_size=micro_batch_size * xm.xrt_world_size(),
     is_training=True,
     no_aug=True,
+    use_prefetcher=False,
   )
 
   torch.manual_seed(42)
@@ -146,7 +159,6 @@ def train_vit():
 
   device = xm.xla_device()
   model = model.to(device)
-  # if xm.is_master_ordinal():
   optim_cls = optim.Adam
   optimizer = optim_cls(
       model.parameters(),
@@ -164,7 +176,7 @@ def train_vit():
       loss = loss_fn(output, target)
       loss.backward()
       xm.optimizer_step(optimizer)
-      print("Step {}, time taken: {}".format(step, time.time() - step_start_time))
+      xm.master_print("Step {}, time taken: {}".format(step, time.time() - step_start_time))
       step_start_time = time.time()
 
   train_device_loader = pl.MpDeviceLoader(train_loader, device)
@@ -172,11 +184,24 @@ def train_vit():
     xm.master_print('Epoch {} train begin {}'.format(epoch, test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
 
-def _mp_fn(index, flags):
-  torch.set_default_dtype(torch.bfloat16)
+# "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
+# and prints its core
+def map_fn(index, flags):
+  # Sets a common random seed - both for initialization and ensuring graph is the same
+  torch.manual_seed(42)
+
+  # Acquires the (unique) Cloud TPU core corresponding to this process's index
+  device = xm.xla_device()
+  print("Process", index ,"is using", xm.xla_real_devices([str(device)])[0])
+
+  # # Barrier to prevent master from exiting before workers connect.
+  # xm.rendezvous('init')
+
+  torch.set_default_dtype(default_dtype)
   train_vit()
 
-if __name__ == '__main__':
-  xmp.spawn(_mp_fn, args=(FLAGS,), nprocs=FLAGS.num_cores)
-
-# xmp.spawn(_mp_fn, args=(FLAGS,), nprocs=FLAGS.num_cores)
+# Spawns eight of the map functions, one for each of the eight cores on
+# the Cloud TPU
+flags = {}
+# Note: Colab only supports start_method='fork'
+xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
