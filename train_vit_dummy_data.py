@@ -3,7 +3,6 @@
 """
 import argparse
 import time
-import yaml
 import os
 import logging
 from collections import OrderedDict
@@ -62,13 +61,6 @@ patch_size = 16  # Size of the patches to be extract from the input images
 
 num_classes = 1000
 num_epochs = 10
-
-
-# The first arg parser parses out only the --config argument, this argument is used to
-# load a yaml file containing key-values that override the defaults for the main parser below
-config_parser = parser = argparse.ArgumentParser(description='Training Config', add_help=False)
-parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
-                    help='YAML config file specifying default arguments')
 
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')

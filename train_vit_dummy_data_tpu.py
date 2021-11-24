@@ -136,14 +136,18 @@ class PatchEncoder(torch.nn.Module):
 def train_vit():
   # create train dataset
   train_dataset = VitDummyDataset(global_batch_size * 4, image_size, num_classes)
-  train_loader = create_loader(
-    train_dataset,
-    input_size=(3, 224, 224),
-    batch_size=micro_batch_size * xm.xrt_world_size(),
-    is_training=True,
-    no_aug=True,
-    use_prefetcher=False,
-  )
+  # train_loader = create_loader(
+  #   train_dataset,
+  #   input_size=(3, 224, 224),
+  #   batch_size=micro_batch_size * 8,
+  #   is_training=True,
+  #   no_aug=True,
+  #   use_prefetcher=False,
+  # )
+  train_loader = torch.utils.data.DataLoader(
+      train_dataset,
+      batch_size=micro_batch_size * 8,
+      num_workers=5)
 
   torch.manual_seed(42)
 
@@ -171,6 +175,7 @@ def train_vit():
   def train_loop_fn(loader, epoch):
     model.train()
     step_start_time = time.time()
+    print("loop begins!")
     for step, (data, target) in enumerate(loader):
       optimizer.zero_grad()
       output = model(data)
@@ -179,6 +184,7 @@ def train_vit():
       xm.optimizer_step(optimizer)
       xm.master_print("Step {}, time taken: {}".format(step, time.time() - step_start_time))
       step_start_time = time.time()
+    print("loop ends!")
 
   train_device_loader = pl.MpDeviceLoader(train_loader, device)
   for epoch in range(1, num_epochs + 1):
