@@ -6,7 +6,9 @@ rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
-python3 train_vit_dummy_data_tpu.py --bits=16 --micro_batch_size=2
+# Cloud Shell session disconnects very frequently.
+# This saves stdout to file, to persist the output through multiple Cloud Shell sessions.
+python3 train_vit_dummy_data_tpu.py --bits=16 --micro_batch_size=2 >> output.txt
 
 # References
 - https://github.com/pytorch/xla/blob/master/test/test_train_mp_imagenet.py
