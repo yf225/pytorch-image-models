@@ -61,11 +61,18 @@ patch_size = 16  # Size of the patches to be extract from the input images
 num_classes = 1000
 num_epochs = 10
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--bits", type=int)
-parser.add_argument("--micro_batch_size", type=int)
+if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
+  bits = 16
+  micro_batch_size = 1
+else:
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--bits", type=int)
+  parser.add_argument("--micro_batch_size", type=int)
+  args = parser.parse_args()
+  bits = args.bits
+  micro_batch_size = args.micro_batch_size
 
-global_batch_size = args.micro_batch_size * xm.xrt_world_size()
+global_batch_size = micro_batch_size * xm.xrt_world_size()
 
 
 class VitDummyDataset(torch.utils.data.Dataset):
@@ -118,7 +125,7 @@ def train_vit():
   loader_train = create_loader(
     dataset_train,
     input_size=(3, 224, 224),
-    batch_size=args.micro_batch_size * xm.xrt_world_size(),
+    batch_size=micro_batch_size * xm.xrt_world_size(),
     is_training=True,
     no_aug=True,
   )
