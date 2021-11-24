@@ -268,7 +268,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
-        print("apex amp opt level: {}, micro_batch_size: {}, mean step duration: {:.3f}".format(args.apex_amp_opt_level, micro_batch_size, statistics.median(step_duration_list)))
+        print("apex amp opt level: {}, micro_batch_size: {}, mean step duration: {:.3f}".format(args.apex_amp_opt_level, args.micro_batch_size, statistics.median(step_duration_list)))
     except KeyboardInterrupt:
         pass
 
