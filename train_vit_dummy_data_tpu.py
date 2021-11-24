@@ -56,6 +56,9 @@ from timm.models.vision_transformer import VisionTransformer
 
 # === Colab 5th cell ===
 
+DEBUG = True
+VERBOSE = False
+
 num_attention_heads = 16
 hidden_size = 1280
 num_layers = 32
@@ -67,12 +70,15 @@ num_classes = 1000
 num_epochs = 10
 
 if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
-  bits = 16
-  micro_batch_size = 1
+  DEBUG = True
+
+if DEBUG:
   print("Overwriting hyperparams since we are in debug mode...")
   num_attention_heads = 1
   hidden_size = 128
   num_layers = 1
+  bits = 16
+  micro_batch_size = 1
 else:
   parser = argparse.ArgumentParser()
   parser.add_argument("--bits", type=int)
@@ -81,13 +87,17 @@ else:
   bits = args.bits
   micro_batch_size = args.micro_batch_size
 
-global_batch_size = micro_batch_size * xm.xrt_world_size()
+global_batch_size = micro_batch_size * 8
 
 assert bits in [16, 32]
 if bits == 16:
   default_dtype = torch.bfloat16
 elif bits == 32:
   default_dtype = torch.float32
+
+def xm_master_print_if_verbose(message):
+  if VERBOSE:
+    xm.master_print(message, flush=True)
 
 class VitDummyDataset(torch.utils.data.Dataset):
   def __init__(self, dataset_size, crop_size, num_classes):
@@ -99,7 +109,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
     return self.dataset_size
 
   def __getitem__(self, index):
-    return (torch.rand(3, self.crop_size, self.crop_size), torch.randint(self.num_classes, (1,)).to(torch.long))
+    return (torch.rand(3, self.crop_size, self.crop_size), torch.randint(self.num_classes, (1,)).item())
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -135,7 +145,7 @@ class PatchEncoder(torch.nn.Module):
 
 def train_vit():
   # create train dataset
-  train_dataset = VitDummyDataset(global_batch_size * 4, image_size, num_classes)
+  train_dataset = VitDummyDataset(global_batch_size * 10, image_size, num_classes)
   # train_loader = create_loader(
   #   train_dataset,
   #   input_size=(3, 224, 224),
@@ -147,7 +157,7 @@ def train_vit():
   train_loader = torch.utils.data.DataLoader(
       train_dataset,
       batch_size=micro_batch_size * 8,
-      num_workers=5)
+      num_workers=2)
 
   torch.manual_seed(42)
 
@@ -172,25 +182,28 @@ def train_vit():
   )
   loss_fn = nn.CrossEntropyLoss()
 
+  step_duration_list = []
+
   def train_loop_fn(loader, epoch):
     model.train()
     step_start_time = time.time()
-    print("loop begins!")
     for step, (data, target) in enumerate(loader):
       optimizer.zero_grad()
       output = model(data)
       loss = loss_fn(output, target)
       loss.backward()
       xm.optimizer_step(optimizer)
-      xm.master_print("Step {}, time taken: {}".format(step, time.time() - step_start_time))
+      step_duration = time.time() - step_start_time
+      step_duration_list.append(step_duration)
+      xm_master_print_if_verbose("Step {}, time taken: {}".format(step, step_duration))
       step_start_time = time.time()
-    print("loop ends!")
 
   train_device_loader = pl.MpDeviceLoader(train_loader, device)
   for epoch in range(1, num_epochs + 1):
-    xm.master_print('Epoch {} train begin {}'.format(epoch, test_utils.now()))
+    xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
-    xm.rendezvous('epoch end')
+
+  xm.master_print("median step duration: {:.3f}".format(statistics.median(step_duration_list)))
 
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
