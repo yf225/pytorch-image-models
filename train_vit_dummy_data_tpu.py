@@ -82,9 +82,10 @@ else:
 
 global_batch_size = micro_batch_size * xm.xrt_world_size()
 
+assert bits in [16, 32]
 if bits == 16:
   default_dtype = torch.bfloat16
-else:
+elif bits == 32:
   default_dtype = torch.float32
 
 class VitDummyDataset(torch.utils.data.Dataset):
