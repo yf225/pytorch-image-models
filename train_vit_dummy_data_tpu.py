@@ -73,7 +73,7 @@ from timm.models.vision_transformer import VisionTransformer
 
 # === Colab 5th cell ===
 
-DEBUG = True
+DEBUG = False
 VERBOSE = False
 
 num_attention_heads = 16
