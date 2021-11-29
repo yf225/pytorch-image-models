@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 """On AWS GPU node
-# Use PyTorch 1.10
+conda activate torch-1.10
 
+cd /fsx/users/willfeng/repos
 rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
@@ -55,7 +56,7 @@ num_epochs = 10
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # Batch size
-parser.add_argument("--micro-batch-size", default=32, type=int)
+parser.add_argument("--micro_batch_size", default=32, type=int)
 
 # Optimizer parameters
 parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
