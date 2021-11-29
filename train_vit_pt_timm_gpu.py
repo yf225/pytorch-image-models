@@ -217,7 +217,6 @@ def main():
 
     # move model to GPU, enable channels last layout if set
     model = model.to(torch.half)
-    model = model.cuda()
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
@@ -225,6 +224,8 @@ def main():
     if args.mode == "graph":
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
         model = torch.jit.script(torch.fx.symbolic_trace(model))
+
+    model = model.cuda()
 
     optimizer = create_optimizer_v2(model, 'adam')
 
