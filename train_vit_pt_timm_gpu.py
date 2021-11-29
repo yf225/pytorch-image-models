@@ -220,7 +220,8 @@ def main():
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
-    model = model.to(torch.half)
+    if use_amp != 'apex':
+        model = model.to(torch.half)
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
