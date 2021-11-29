@@ -278,7 +278,7 @@ class VisionTransformer(nn.Module):
 
         # self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         # self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
+        # self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate) if drop_rate > 0. else nn.Identity()
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
@@ -310,7 +310,7 @@ class VisionTransformer(nn.Module):
     def init_weights(self, mode=''):
         assert mode in ('jax', 'jax_nlhb', 'nlhb', '')
         head_bias = -math.log(self.num_classes) if 'nlhb' in mode else 0.
-        trunc_normal_(self.pos_embed, std=.02)
+        # trunc_normal_(self.pos_embed, std=.02)
         # if self.dist_token is not None:
         #     trunc_normal_(self.dist_token, std=.02)
         if mode.startswith('jax'):
@@ -330,7 +330,7 @@ class VisionTransformer(nn.Module):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        return {'pos_embed'} # , 'cls_token', 'dist_token'}
+        return {} # {'pos_embed', 'cls_token', 'dist_token'}
 
     def get_classifier(self):
         # if self.dist_token is None:
@@ -457,11 +457,11 @@ def _load_weights(model: VisionTransformer, checkpoint_path: str, prefix: str = 
     model.patch_embed.proj.weight.copy_(embed_conv_w)
     model.patch_embed.proj.bias.copy_(_n2p(w[f'{prefix}embedding/bias']))
     # model.cls_token.copy_(_n2p(w[f'{prefix}cls'], t=False))
-    pos_embed_w = _n2p(w[f'{prefix}Transformer/posembed_input/pos_embedding'], t=False)
-    if pos_embed_w.shape != model.pos_embed.shape:
-        pos_embed_w = resize_pos_embed(  # resize pos embedding when different size from pretrained weights
-            pos_embed_w, model.pos_embed, getattr(model, 'num_tokens', 1), model.patch_embed.grid_size)
-    model.pos_embed.copy_(pos_embed_w)
+    # pos_embed_w = _n2p(w[f'{prefix}Transformer/posembed_input/pos_embedding'], t=False)
+    # if pos_embed_w.shape != model.pos_embed.shape:
+    #     pos_embed_w = resize_pos_embed(  # resize pos embedding when different size from pretrained weights
+    #         pos_embed_w, model.pos_embed, getattr(model, 'num_tokens', 1), model.patch_embed.grid_size)
+    # model.pos_embed.copy_(pos_embed_w)
     model.norm.weight.copy_(_n2p(w[f'{prefix}Transformer/encoder_norm/scale']))
     model.norm.bias.copy_(_n2p(w[f'{prefix}Transformer/encoder_norm/bias']))
     if isinstance(model.head, nn.Linear) and model.head.bias.shape[0] == w[f'{prefix}head/bias'].shape[-1]:
