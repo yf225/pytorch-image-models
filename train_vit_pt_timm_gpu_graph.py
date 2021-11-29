@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 """On AWS GPU node
+# Use PyTorch 1.10
+
 rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull

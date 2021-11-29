@@ -74,8 +74,8 @@ from timm.models.vision_transformer import VisionTransformer
 
 # === Colab 5th cell ===
 
-DEBUG = True
-VERBOSE = True
+DEBUG = False
+VERBOSE = False
 
 num_attention_heads = 16
 hidden_size = 1280
