@@ -165,32 +165,12 @@ def main():
     # setup automatic mixed-precision (AMP) loss scaling and op casting
     amp_autocast = suppress  # do nothing
     loss_scaler = None
-    if use_amp == 'apex':
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
-        loss_scaler = ApexScaler()
-        if args.local_rank == 0:
-            print_if_verbose('Using NVIDIA APEX AMP. Training in mixed precision.')
-    elif use_amp == 'native':
-        amp_autocast = torch.cuda.amp.autocast
-        loss_scaler = NativeScaler()
-        if args.local_rank == 0:
-            print_if_verbose('Using native Torch AMP. Training in mixed precision.')
-    else:
-        if args.local_rank == 0:
-            print_if_verbose('AMP not enabled.')
 
     # setup distributed training
     if args.distributed:
-        if has_apex and use_amp == 'apex':
-            # Apex DDP preferred unless native amp is activated
-            if args.local_rank == 0:
-                print_if_verbose("Using NVIDIA APEX DistributedDataParallel.")
-            model = ApexDDP(model, delay_allreduce=True)
-        else:
-            if args.local_rank == 0:
-                print_if_verbose("Using native Torch DistributedDataParallel.")
-            model = NativeDDP(model, device_ids=[args.local_rank], find_unused_parameters=True)
-        # NOTE: EMA model does not need to be wrapped by DDP
+        if args.local_rank == 0:
+            print_if_verbose("Using native Torch DistributedDataParallel.")
+        model = NativeDDP(model, device_ids=[args.local_rank], find_unused_parameters=True)
 
     start_epoch = 0
 
