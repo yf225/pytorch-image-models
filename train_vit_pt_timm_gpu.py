@@ -8,7 +8,8 @@ rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
-python3 train_vit_pt_timm_gpu_graph.py --micro_batch_size=2
+python3 train_vit_pt_timm_gpu_graph.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
+python3 train_vit_pt_timm_gpu_graph.py --native-amp --mode=graph --micro_batch_size=2
 """
 import argparse
 import time
@@ -101,8 +102,8 @@ parser.add_argument('--pin-mem', action='store_true', default=False,
 parser.add_argument("--local_rank", default=0, type=int)
 parser.add_argument('--use-multi-epochs-loader', action='store_true', default=False,
                     help='use the multi-epochs-loader to save time at the beginning of every epoch')
-parser.add_argument('--torchscript', dest='torchscript', action='store_true',
-                    help='convert model torchscript for inference')
+parser.add_argument('--mode', type=str,
+                    help='"eager" or "graph"')
 parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='how many batches to wait before logging training status')
 
@@ -120,7 +121,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(3, self.crop_size, self.crop_size), torch.randint(self.num_classes, (1,)).to(torch.long))
+        return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -212,13 +213,15 @@ def main():
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
+    model = model.to(torch.half)
     model = model.cuda()
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
-    if args.torchscript:
+    assert args.mode in ["eager", "graph"]
+    if args.mode == "graph":
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
-        model = torch.jit.script(model)
+        model = torch.jit.script(torch.fx.symbolic_trace(model))
 
     optimizer = create_optimizer_v2(model, 'adam')
 
@@ -269,7 +272,7 @@ def main():
     )
 
     # setup loss function
-    train_loss_fn = nn.CrossEntropyLoss()
+    train_loss_fn = nn.CrossEntropyLoss().to(torch.half)
     train_loss_fn = train_loss_fn.cuda()
 
     try:
