@@ -12,7 +12,7 @@ python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --native-amp --mode=graph --micro_batch_size=2
+train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 """
 import argparse
 import time
@@ -255,7 +255,7 @@ def main():
         else:
             if args.local_rank == 0:
                 print_if_verbose("Using native Torch DistributedDataParallel.")
-            model = NativeDDP(model, device_ids=[args.local_rank], find_unused_parameters=True)
+            model = NativeDDP(model, device_ids=[args.local_rank])
         # NOTE: EMA model does not need to be wrapped by DDP
 
     start_epoch = 0
