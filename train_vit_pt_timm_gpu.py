@@ -222,6 +222,10 @@ def main():
     # move model to GPU, enable channels last layout if set
     if use_amp != 'apex':
         model = model.to(torch.half)
+    else:
+        # When using apex.amp.initialize, you do not need to call .half() on your model
+        # before passing it, no matter what optimization level you choose.
+        pass
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
