@@ -8,8 +8,8 @@ rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
-python3 train_vit_pt_timm_gpu_graph.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
-python3 train_vit_pt_timm_gpu_graph.py --native-amp --mode=graph --micro_batch_size=2
+python3 train_vit_pt_timm_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
+python3 train_vit_pt_timm_gpu.py --native-amp --mode=graph --micro_batch_size=2
 """
 import argparse
 import time
