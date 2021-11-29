@@ -7,10 +7,11 @@ git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
 # Cloud Shell session disconnects very frequently.
-# This saves stdout to local file on VM, to persist the output through multiple Cloud Shell sessions.
-python3 train_vit_dummy_data_tpu.py --bits=16 --micro_batch_size=2 >> output.txt
+# This saves stdout and stderr to local file on VM, to persist the output through multiple Cloud Shell sessions.
+python3 train_vit_pt_timm_tpu.py --bits=16 --micro_batch_size=2 >> output.txt 2>&1
 
 # References
+- https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
 - https://github.com/pytorch/xla/blob/master/test/test_train_mp_imagenet.py
 - https://cloud.google.com/tpu/docs/pytorch-xla-ug-tpu-vm
 """
@@ -192,7 +193,7 @@ def train_vit():
   )
 
   device = xm.xla_device()
-  model = model.to(device)
+  model = model.to(device).train()
   optim_cls = optim.Adam
   optimizer = optim_cls(
       model.parameters(),
@@ -210,7 +211,14 @@ def train_vit():
       output = model(data)
       loss = loss_fn(output, target)
       loss.backward()
-      xm.optimizer_step(optimizer)
+      # Note: optimizer_step uses the implicit Cloud TPU context to
+      #  coordinate and synchronize gradient updates across processes.
+      #  This means that each process's network has the same weights after
+      #  this is called.
+      # Warning: this coordination requires the actions performed in each
+      #  process are the same. In more technical terms, the graph that
+      #  PyTorch/XLA generates must be the same across processes.
+      xm.optimizer_step(optimizer)  # Note: barrier=True not needed when using ParallelLoader
       step_duration = time.time() - step_start_time
       step_duration_list.append(step_duration)
       xm_master_print_if_verbose("Step {}, time taken: {}".format(step, step_duration))
