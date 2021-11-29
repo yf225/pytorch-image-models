@@ -13,6 +13,9 @@ train_vit_pt_timm_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro
 
 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
+
+python -m torch.distributed.launch --nproc_per_node=4 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=2
 """
 import argparse
 import time
@@ -233,6 +236,7 @@ def main():
     amp_autocast = suppress  # do nothing
     loss_scaler = None
     if use_amp == 'apex':
+        assert args.apex_amp_opt_level == 'O3', "only half-precision is supported!"
         model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
         loss_scaler = ApexScaler()
         if args.local_rank == 0:
