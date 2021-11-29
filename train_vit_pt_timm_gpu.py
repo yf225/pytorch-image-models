@@ -158,6 +158,7 @@ class PatchEncoder(torch.nn.Module):
         #     p2=self.patch_size[1],
         # )
         positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
+        assert rearranged_input.dtype == torch.half, "TODO DEBUG"
         ret = self.projection(rearranged_input)
         ret = ret + self.position_embedding(positions)
         return ret
