@@ -15,6 +15,8 @@ train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
+
+manifold put ./trace_1638305255_0.json gpu_traces_manual/tree/AWS_V100_traces/trace_1638305255_0.json
 """
 import argparse
 import time
