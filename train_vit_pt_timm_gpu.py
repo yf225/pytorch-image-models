@@ -215,8 +215,7 @@ def main():
         pass
 
 
-def train_one_epoch(
-        epoch, model, loader, optimizer, loss_fn, args):
+def train_one_epoch(epoch, model, loader, optimizer, loss_fn, args):
 
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
     batch_time_m = AverageMeter()
