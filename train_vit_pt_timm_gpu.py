@@ -14,7 +14,7 @@ python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=4
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
 """
 import argparse
 import time
@@ -47,6 +47,7 @@ torch.backends.cudnn.benchmark = True
 
 # Hyperparams
 
+should_profile = True
 VERBOSE = False
 num_attention_heads = 16
 hidden_size = 1280
