@@ -8,8 +8,7 @@ rm -rf ./pytorch-image-models || true
 git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
-python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
+export PYTHONPATH=/fsx/users/willfeng/repos/pytorch-image-models:${PYTHONPATH}
 
 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
@@ -43,26 +42,6 @@ from timm.utils import ApexScaler, NativeScaler
 from timm.models.helpers import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
 
-try:
-    from apex import amp
-    from apex.parallel import DistributedDataParallel as ApexDDP
-    from apex.parallel import convert_syncbn_model
-    has_apex = True
-except ImportError:
-    has_apex = False
-
-has_native_amp = False
-try:
-    if getattr(torch.cuda.amp, 'autocast') is not None:
-        has_native_amp = True
-except AttributeError:
-    pass
-
-try:
-    import wandb
-    has_wandb = True
-except ImportError:
-    has_wandb = False
 
 torch.backends.cudnn.benchmark = True
 
@@ -86,21 +65,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 # Batch size
 parser.add_argument("--micro_batch_size", default=32, type=int)
 
-# Optimizer parameters
-parser.add_argument('--clip-grad', type=float, default=None, metavar='NORM',
-                    help='Clip gradient norm (default: None, no clipping)')
-parser.add_argument('--clip-mode', type=str, default='norm',
-                    help='Gradient clipping mode. One of ("norm", "value", "agc")')
-
 # Misc
-parser.add_argument('--amp', action='store_true', default=False,
-                    help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
-parser.add_argument('--apex-amp', action='store_true', default=False,
-                    help='Use NVIDIA Apex AMP mixed precision')
-parser.add_argument('--apex-amp-opt-level', type=str, default='O1',
-                    help='NVIDIA Apex AMP optimization level ("O0", "O1", "O2", "O3")')
-parser.add_argument('--native-amp', action='store_true', default=False,
-                    help='Use Native Torch AMP mixed precision')
 parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
 parser.add_argument('--pin-mem', action='store_true', default=False,
@@ -185,22 +150,6 @@ def main():
         print_if_verbose('Training with a single process on 1 GPUs.')
     assert args.rank >= 0
 
-    # resolve AMP arguments based on PyTorch / Apex availability
-    use_amp = None
-    if args.amp:
-        # `--amp` chooses native amp before apex (APEX ver not actively maintained)
-        if has_native_amp:
-            args.native_amp = True
-        elif has_apex:
-            args.apex_amp = True
-    if args.apex_amp and has_apex:
-        use_amp = 'apex'
-    elif args.native_amp and has_native_amp:
-        use_amp = 'native'
-    elif args.apex_amp or args.native_amp:
-        print_if_verbose("Neither APEX or native Torch AMP is available, using float32. "
-                        "Install NVIDA apex or upgrade to PyTorch 1.6")
-
     random_seed(42, args.rank)
 
     model = build_model_with_cfg(
@@ -220,54 +169,21 @@ def main():
             f'Model created, param count:{sum([m.numel() for m in model.parameters()])}')
 
     # move model to GPU, enable channels last layout if set
-    if use_amp != 'apex':
-        model = model.to(torch.half)
-    else:
-        # When using apex.amp.initialize, you do not need to call .half() on your model
-        # before passing it, no matter what optimization level you choose.
-        pass
+    model = model.to(torch.half)
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
     assert args.mode in ["eager", "graph"]
     if args.mode == "graph":
-        assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
         model = torch.jit.script(torch.fx.symbolic_trace(model))
 
     model = model.cuda()
 
-    optimizer = create_optimizer_v2(model, 'adam')
-
-    # setup automatic mixed-precision (AMP) loss scaling and op casting
-    amp_autocast = suppress  # do nothing
-    loss_scaler = None
-    if use_amp == 'apex':
-        assert args.apex_amp_opt_level == 'O3', "only half-pr\ecision is supported!"
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
-        loss_scaler = ApexScaler()
-        if args.local_rank == 0:
-            print_if_verbose('Using NVIDIA APEX AMP. Training in mixed precision.')
-    elif use_amp == 'native':
-        amp_autocast = torch.cuda.amp.autocast
-        loss_scaler = NativeScaler()
-        if args.local_rank == 0:
-            print_if_verbose('Using native Torch AMP. Training in mixed precision.')
-    else:
-        if args.local_rank == 0:
-            print_if_verbose('AMP not enabled.')
+    optimizer = create_optimizer_v2(model, 'adam', lr=1e-6)
 
     # setup distributed training
     if args.distributed:
-        if has_apex and use_amp == 'apex':
-            # Apex DDP preferred unless native amp is activated
-            if args.local_rank == 0:
-                print_if_verbose("Using NVIDIA APEX DistributedDataParallel.")
-            model = ApexDDP(model, delay_allreduce=True)
-        else:
-            if args.local_rank == 0:
-                print_if_verbose("Using native Torch DistributedDataParallel.")
-            model = NativeDDP(model, device_ids=[args.local_rank])
-        # NOTE: EMA model does not need to be wrapped by DDP
+        model = NativeDDP(model, device_ids=[args.local_rank])
 
     start_epoch = 0
 
@@ -293,8 +209,7 @@ def main():
     try:
         for epoch in range(start_epoch, num_epochs):
             train_metrics = train_one_epoch(
-                epoch, model, loader_train, optimizer, train_loss_fn, args,
-                amp_autocast=amp_autocast, loss_scaler=loss_scaler)
+                epoch, model, loader_train, optimizer, train_loss_fn, args)
         if args.local_rank == 0:
             print("micro_batch_size: {}, mean step duration: {:.3f}".format(args.micro_batch_size, statistics.median(step_duration_list)))
     except KeyboardInterrupt:
@@ -302,8 +217,7 @@ def main():
 
 
 def train_one_epoch(
-        epoch, model, loader, optimizer, loss_fn, args,
-        amp_autocast=suppress, loss_scaler=None):
+        epoch, model, loader, optimizer, loss_fn, args):
 
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
     batch_time_m = AverageMeter()
@@ -321,9 +235,8 @@ def train_one_epoch(
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
-        with amp_autocast():
-            output = model(input)
-            loss = loss_fn(output, target)
+        output = model(input)
+        loss = loss_fn(output, target)
 
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
