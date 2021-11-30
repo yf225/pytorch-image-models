@@ -130,6 +130,8 @@ class PatchEncoder(torch.nn.Module):
 step_duration_list = []
 
 def main():
+    global should_profile
+
     args = parser.parse_args()
 
     args.distributed = False
