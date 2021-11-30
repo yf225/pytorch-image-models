@@ -38,7 +38,6 @@ from timm.utils import *
 from timm.loss import *
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler
-from timm.utils import ApexScaler, NativeScaler
 from timm.models.helpers import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
 
@@ -242,19 +241,8 @@ def train_one_epoch(
             losses_m.update(loss.item(), input.size(0))
 
         optimizer.zero_grad()
-        if loss_scaler is not None:
-            loss_scaler(
-                loss, optimizer,
-                clip_grad=args.clip_grad, clip_mode=args.clip_mode,
-                parameters=model_parameters(model, exclude_head='agc' in args.clip_mode),
-                create_graph=second_order)
-        else:
-            loss.backward(create_graph=second_order)
-            if args.clip_grad is not None:
-                dispatch_clip_grad(
-                    model_parameters(model, exclude_head='agc' in args.clip_mode),
-                    value=args.clip_grad, mode=args.clip_mode)
-            optimizer.step()
+        loss.backward(create_graph=second_order)
+        optimizer.step()
 
         torch.cuda.synchronize()
         num_updates += 1
