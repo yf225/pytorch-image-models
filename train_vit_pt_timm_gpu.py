@@ -296,7 +296,7 @@ def main():
                 epoch, model, loader_train, optimizer, train_loss_fn, args,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler)
         if args.local_rank == 0:
-            print("micro_batch_size: {}, mean step duration: {:.3f}".format(args.apex_amp_opt_level, args.micro_batch_size, statistics.median(step_duration_list)))
+            print("micro_batch_size: {}, mean step duration: {:.3f}".format(args.micro_batch_size, statistics.median(step_duration_list)))
     except KeyboardInterrupt:
         pass
 
