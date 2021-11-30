@@ -354,8 +354,6 @@ class VisionTransformer(nn.Module):
         # x = self.pos_drop(x + self.pos_embed)
         x = self.blocks(x)
         x = self.norm(x)
-        print("forward_features: x.shape: ", x.shape)
-        print("forward_features: x[:, 0].shape: ", x[:, 0].shape)
         # if self.dist_token is None:
         return self.pre_logits(x[:, 0])
         # else:
@@ -372,7 +370,6 @@ class VisionTransformer(nn.Module):
         #         return (x + x_dist) / 2
         # else:
         x = self.head(x)
-        print("forward: x.shape: ", x.shape)
         return x
 
 

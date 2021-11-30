@@ -15,7 +15,7 @@ python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=2
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=4
 """
 import argparse
 import time
@@ -316,6 +316,7 @@ def train_one_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
+        print("input.shape: ", input.shape)
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if args.channels_last:
