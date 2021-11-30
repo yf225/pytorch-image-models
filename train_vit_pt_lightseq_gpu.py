@@ -10,13 +10,13 @@ git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
+train_vit_pt_lightseq_gpu.py --apex-amp --apex-amp-opt-level=O3 --mode=eager --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
+train_vit_pt_lightseq_gpu.py --mode=graph --micro_batch_size=2
 
 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=2
+train_vit_pt_lightseq_gpu.py --mode=eager --micro_batch_size=2
 """
 import argparse
 import time
