@@ -49,7 +49,7 @@ try:
     from apex.parallel import convert_syncbn_model
     has_apex = True
 except ImportError:
-    raise ("No apex!")
+    raise Exception("No apex!")
 
 has_native_amp = False
 try:
@@ -242,7 +242,7 @@ def main():
     amp_autocast = suppress  # do nothing
     loss_scaler = None
     if use_amp == 'apex':
-        assert args.apex_amp_opt_level == 'O3', "only half-precision is supported!"
+        assert args.apex_amp_opt_level == 'O3', "only half-pr\ecision is supported!"
         model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_amp_opt_level)
         loss_scaler = ApexScaler()
         if args.local_rank == 0:
