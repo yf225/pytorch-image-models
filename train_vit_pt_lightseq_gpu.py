@@ -229,7 +229,7 @@ class LSVisionTransformer(torch.nn.Module):
                 patch_size=config.patch_size,
                 in_chans=config.in_chans,
                 embedding_dim=config.hidden_size,
-                local_rank=config.local_rank,
+                local_rank=-1,
             )
         )
         return emb
@@ -296,7 +296,7 @@ def main():
         pre_layer_norm=True,  # pre layer norm or post
         activation_fn="gelu",  # relu or gelu
         fp16=True,
-        local_rank=0,
+        local_rank=-1,
         img_size=image_size,
         patch_size=patch_size,
         in_chans=3,
