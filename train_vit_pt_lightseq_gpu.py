@@ -54,7 +54,7 @@ try:
     from apex.parallel import convert_syncbn_model
     has_apex = True
 except ImportError:
-    print("No apex found.")
+    has_apex = False
 
 has_native_amp = False
 try:
