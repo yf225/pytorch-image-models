@@ -316,7 +316,6 @@ def train_one_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
-        print("input.shape: ", input.shape)
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if args.channels_last:
@@ -324,7 +323,6 @@ def train_one_epoch(
 
         with amp_autocast():
             output = model(input)
-            print("target.shape: ", target.shape)
             loss = loss_fn(output, target)
 
         if not args.distributed:
