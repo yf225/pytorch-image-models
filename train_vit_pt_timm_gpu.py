@@ -254,15 +254,21 @@ def train_one_epoch(epoch, model, loader, optimizer, loss_fn, args):
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
-        output = model(input)
-        loss = loss_fn(output, target)
+        with torch.autograd.profiler.record_function("### forward ###"):
+            output = model(input)
+            loss = loss_fn(output, target)
 
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
 
-        optimizer.zero_grad()
-        loss.backward(create_graph=second_order)
-        optimizer.step()
+        with torch.autograd.profiler.record_function("### zero_grad ###"):
+            optimizer.zero_grad()
+
+        with torch.autograd.profiler.record_function("### backward ###"):
+            loss.backward(create_graph=second_order)
+
+        with torch.autograd.profiler.record_function("### optimizer step ###"):
+            optimizer.step()
 
         torch.cuda.synchronize()
         num_updates += 1
