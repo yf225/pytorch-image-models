@@ -288,8 +288,8 @@ def main():
         num_encoder_layer=32,
         num_decoder_layer=0,
         intermediate_size=4*hidden_size,  # size of ffn inner size
-        max_seq_len=(img_size // patch_size) ** 2,
-        max_batch_tokens=((img_size // patch_size) ** 2) * args.micro_batch_size,
+        max_seq_len=(image_size // patch_size) ** 2,
+        max_batch_tokens=((image_size // patch_size) ** 2) * args.micro_batch_size,
         attn_prob_dropout_ratio=0.0,  # attention score dropout ratio
         activation_dropout_ratio=0.0,  # ffn activation dropout ratio
         hidden_dropout_ratio=0.0,  # dropout ration before residual
@@ -297,7 +297,7 @@ def main():
         activation_fn="gelu",  # relu or gelu
         fp16=True,
         local_rank=0,
-        img_size=img_size,
+        img_size=image_size,
         patch_size=patch_size,
         in_chans=3,
         padding_idx=1,
