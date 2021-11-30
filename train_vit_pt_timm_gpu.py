@@ -210,7 +210,7 @@ def main():
 
     try:
         for epoch in range(start_epoch, num_epochs):
-            if should_profile:
+            if should_profile and args.local_rank == 0:
                 prof = torch.profiler.profile(
                     activities=[
                         torch.profiler.ProfilerActivity.CPU,
@@ -222,13 +222,13 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args)
 
-            if should_profile:
+            if should_profile and args.local_rank == 0:
                 prof.__exit__(None, None, None)
                 trace_dir_path = "train_vit_pt_timm_gpu_trace"
                 if not os.path.isdir(trace_dir_path):
                     os.mkdir(trace_dir_path)
                 prof.export_chrome_trace(os.path.join(trace_dir_path, "trace_{}_{}.json".format(str(int(time.time())), str(torch.distributed.get_rank()))))
-            should_profile = False  # NOTE: only profile one epoch
+                should_profile = False  # NOTE: only profile one epoch
 
         if args.local_rank == 0:
             print("micro_batch_size: {}, median step duration: {:.3f}".format(args.micro_batch_size, statistics.median(step_duration_list)))
