@@ -158,8 +158,8 @@ def main():
         args.world_size = torch.distributed.get_world_size()
         args.num_devices = torch.distributed.get_world_size()
         args.rank = torch.distributed.get_rank()
-        print_if_verbose('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
-                     % (args.rank, args.world_size))
+        print_if_verbose('Training in distributed mode with multiple processes, 1 GPU per process. global rank: {}, local rank: {}, total {}'.format(
+            args.rank, args.local_rank, args.world_size))
     else:
         print_if_verbose('Training with a single process on 1 GPUs.')
     assert args.rank >= 0
