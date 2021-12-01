@@ -85,7 +85,7 @@ image_size = 224
 patch_size = 16  # Size of the patches to be extract from the input images
 
 num_classes = 1000
-num_epochs = 10
+num_epochs = 3
 
 if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
   DEBUG = True
