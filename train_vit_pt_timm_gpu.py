@@ -10,21 +10,17 @@ cd pytorch-image-models && git pull
 
 export PYTHONPATH=/fsx/users/willfeng/repos/pytorch-image-models:${PYTHONPATH}
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-python -m torch.distributed.launch --nproc_per_node=4 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
 
-export CUDA_VISIBLE_DEVICES=0
-python -m torch.distributed.launch --nproc_per_node=1 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
+CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-python -m torch.distributed.launch --nproc_per_node=8 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
 
 rsync -avr ab101835-ddb5-466f-9d25-55b1d5a16351:/fsx/users/willfeng/repos/pytorch-image-models/train_vit_pt_timm_gpu_trace/* ~/train_vit_pt_timm_gpu_trace/
 
@@ -62,7 +58,7 @@ torch.backends.cudnn.benchmark = True
 # Hyperparams
 
 should_profile = True
-VERBOSE = False
+VERBOSE = True
 num_attention_heads = 16
 hidden_size = 1280
 num_layers = 32
@@ -201,7 +197,7 @@ def main():
 
     # setup distributed training
     if args.distributed:
-        model = NativeDDP(model, device_ids=[args.local_rank])
+        model = NativeDDP(model, device_ids=[args.local_rank], output_device=args.local_rank)
 
     start_epoch = 0
 
