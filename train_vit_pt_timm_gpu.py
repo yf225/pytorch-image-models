@@ -207,17 +207,18 @@ def main():
 
     # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, image_size, num_classes)
-    sampler = torch.utils.data.distributed.DistributedSampler(dataset_train) if args.distributed else None
-    loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=args.micro_batch_size, sampler=sampler, num_workers=1)
+    # sampler = torch.utils.data.distributed.DistributedSampler(dataset_train) if args.distributed else None
+    # loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=args.micro_batch_size, sampler=sampler, num_workers=1)
 
-    # loader_train = create_loader(
-    #     dataset_train,
-    #     input_size=(3, 224, 224),
-    #     batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
-    #     is_training=True,
-    #     no_aug=True,
-    #     fp16=True,
-    # )
+    loader_train = create_loader(
+        dataset_train,
+        input_size=(3, 224, 224),
+        batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
+        is_training=True,
+        no_aug=True,
+        fp16=True,
+        distributed=True,
+    )
 
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss().to(torch.half)
