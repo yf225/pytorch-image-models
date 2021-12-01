@@ -162,9 +162,10 @@ class PatchEncoder(torch.nn.Module):
     return encoded
 
 def train_vit():
+  assert xm.xrt_world_size() == 8
   xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
-  train_dataset = VitDummyDataset(micro_batch_size * 8 * 10, image_size, num_classes)
+  train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, image_size, num_classes)
   train_sampler = torch.utils.data.distributed.DistributedSampler(
     train_dataset,
     num_replicas=xm.xrt_world_size(),
