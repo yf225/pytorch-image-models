@@ -137,6 +137,7 @@ def main():
     args = parser.parse_args()
 
     args.distributed = False
+    args.num_devices = 1
     if 'WORLD_SIZE' in os.environ:
         args.distributed = int(os.environ['WORLD_SIZE']) > 1
     args.device = 'cuda:0'
@@ -147,6 +148,7 @@ def main():
         torch.cuda.set_device(args.local_rank)
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
         args.world_size = torch.distributed.get_world_size()
+        args.num_devices = torch.distributed.get_world_size()
         args.rank = torch.distributed.get_rank()
         print_if_verbose('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
                      % (args.rank, args.world_size))
@@ -195,12 +197,12 @@ def main():
         print_if_verbose('Scheduled epochs: {}'.format(num_epochs))
 
     # create train dataset
-    dataset_train = VitDummyDataset(args.micro_batch_size * torch.distributed.get_world_size() * 10, image_size, num_classes)
+    dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, image_size, num_classes)
 
     loader_train = create_loader(
         dataset_train,
         input_size=(3, 224, 224),
-        batch_size=args.micro_batch_size * torch.distributed.get_world_size(),
+        batch_size=args.micro_batch_size * args.num_devices,
         is_training=True,
         no_aug=True,
         fp16=True,
