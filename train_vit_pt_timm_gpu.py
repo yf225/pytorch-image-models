@@ -16,6 +16,9 @@ train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
 
+python -m torch.distributed.launch --nproc_per_node=1 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
+
 manifold put ./trace_1638305255_0.json gpu_traces_manual/tree/AWS_V100_traces/trace_1638305255_0.json
 """
 import argparse
@@ -231,7 +234,7 @@ def main():
                 trace_dir_path = "train_vit_pt_timm_gpu_trace"
                 if not os.path.isdir(trace_dir_path):
                     os.mkdir(trace_dir_path)
-                prof.export_chrome_trace(os.path.join(trace_dir_path, "trace_{}_{}.json".format(str(int(time.time())), 0)))
+                prof.export_chrome_trace(os.path.join(trace_dir_path, "trace_{}_{}_{}.json".format(str(int(time.time())), args.num_devices, 0)))
                 should_profile = False  # NOTE: only profile one epoch
 
         if args.local_rank == 0:
