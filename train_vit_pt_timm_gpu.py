@@ -162,6 +162,7 @@ def main():
             args.rank, args.local_rank, args.world_size))
     else:
         print_if_verbose('Training with a single process on 1 GPUs.')
+        torch.cuda.set_device(args.local_rank)
     assert args.rank >= 0
 
     random_seed(42, args.rank)
@@ -234,7 +235,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args)
 
-            if should_profile and args.local_rank == 0:
+            if should_profile:
                 prof.__exit__(None, None, None)
                 trace_dir_path = "train_vit_pt_timm_gpu_trace"
                 if not os.path.isdir(trace_dir_path):
