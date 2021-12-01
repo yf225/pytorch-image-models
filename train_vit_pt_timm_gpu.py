@@ -67,7 +67,7 @@ image_size = 224
 patch_size = 16  # Size of the patches to be extract from the input images
 
 num_classes = 1000
-num_epochs = 10
+num_epochs = 3
 
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
