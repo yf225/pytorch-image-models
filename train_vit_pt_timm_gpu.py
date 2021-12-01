@@ -56,7 +56,7 @@ from timm.models.helpers import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
 
 
-torch.backends.cudnn.benchmark = False  # True
+torch.backends.cudnn.benchmark = True
 
 
 # Hyperparams
