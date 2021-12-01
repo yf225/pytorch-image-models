@@ -56,9 +56,9 @@ torch.backends.cudnn.benchmark = True
 
 should_profile = True
 VERBOSE = False
-num_attention_heads = 2 # TODO change back to 16
+num_attention_heads = 16
 hidden_size = 1280
-num_layers = 1 # TODO change back to 32
+num_layers = 32
 
 image_size = 224
 patch_size = 16  # Size of the patches to be extract from the input images
