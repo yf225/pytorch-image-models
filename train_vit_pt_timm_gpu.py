@@ -211,7 +211,7 @@ def main():
     loader_train = create_loader(
         dataset_train,
         input_size=(3, 224, 224),
-        batch_size=args.micro_batch_size * args.num_devices,
+        batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
         is_training=True,
         no_aug=True,
         fp16=True,
