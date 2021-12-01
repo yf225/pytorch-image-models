@@ -19,6 +19,8 @@ train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
 python -m torch.distributed.launch --nproc_per_node=1 \
 train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=20
 
+rsync -avr ab101835-ddb5-466f-9d25-55b1d5a16351:/fsx/users/willfeng/repos/pytorch-image-models/train_vit_pt_timm_gpu_trace/* ~/train_vit_pt_timm_gpu_trace/
+
 manifold put ./trace_1638305255_0.json gpu_traces_manual/tree/AWS_V100_traces/trace_1638305255_0.json
 """
 import argparse
@@ -54,9 +56,9 @@ torch.backends.cudnn.benchmark = True
 
 should_profile = True
 VERBOSE = False
-num_attention_heads = 16
+num_attention_heads = 2 # TODO change back to 16
 hidden_size = 1280
-num_layers = 32
+num_layers = 1 # TODO change back to 32
 
 image_size = 224
 patch_size = 16  # Size of the patches to be extract from the input images
