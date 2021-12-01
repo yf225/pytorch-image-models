@@ -165,11 +165,15 @@ def train_vit():
   xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
   train_dataset = VitDummyDataset(micro_batch_size * 8 * 10, image_size, num_classes)
-  sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, num_replicas=8)
+  train_sampler = torch.utils.data.distributed.DistributedSampler(
+    train_dataset,
+    num_replicas=xm.xrt_world_size(),
+    rank=xm.get_ordinal(),
+  )
   train_loader = torch.utils.data.DataLoader(
     train_dataset,
     batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
-    sampler=sampler,
+    sampler=train_sampler,
     num_workers=1,
   )
 
