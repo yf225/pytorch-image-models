@@ -223,7 +223,7 @@ def main():
 
     try:
         for epoch in range(start_epoch, num_epochs):
-            if should_profile: # and args.local_rank == 0:
+            if should_profile and args.local_rank == 0:
                 def recorder_enter_hook(module, input):
                     module._torch_profiler_recorder = torch.autograd.profiler.record_function(str(module.__class__))
                     module._torch_profiler_recorder.__enter__()
@@ -245,7 +245,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args)
 
-            if should_profile: # and args.local_rank == 0:
+            if should_profile and args.local_rank == 0:
                 prof.__exit__(None, None, None)
                 trace_dir_path = "train_vit_pt_timm_gpu_trace"
                 if not os.path.isdir(trace_dir_path):
