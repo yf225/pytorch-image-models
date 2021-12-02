@@ -121,12 +121,13 @@ class PatchEncoder(torch.nn.Module):
         )
 
     def forward(self, input):
-        rearranged_input = einops.rearrange(
-            input,
-            "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
-            p1=self.patch_size[0],
-            p2=self.patch_size[1],
-        )
+        rearranged_input = input.view(-1, self.grid_size[0] * self.grid_size[1], self.patch_size[0] * self.patch_size[1] * self.in_chans)
+        # rearranged_input = einops.rearrange(
+        #     input,
+        #     "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
+        #     p1=self.patch_size[0],
+        #     p2=self.patch_size[1],
+        # )
         positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
         ret = self.projection(rearranged_input)
         ret = ret + self.position_embedding(positions)
