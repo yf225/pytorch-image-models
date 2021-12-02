@@ -58,7 +58,7 @@ torch.backends.cudnn.benchmark = True
 # Hyperparams
 
 should_profile = False
-VERBOSE = True
+VERBOSE = False
 num_attention_heads = 16
 hidden_size = 1280
 num_layers = 32
