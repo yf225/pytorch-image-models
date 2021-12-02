@@ -78,11 +78,7 @@ parser.add_argument("--micro_batch_size", default=32, type=int)
 # Misc
 parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
-parser.add_argument('--pin-mem', action='store_true', default=False,
-                    help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
 parser.add_argument("--local_rank", default=0, type=int)
-parser.add_argument('--use-multi-epochs-loader', action='store_true', default=False,
-                    help='use the multi-epochs-loader to save time at the beginning of every epoch')
 parser.add_argument('--mode', type=str,
                     help='"eager" or "graph"')
 parser.add_argument('--log-interval', type=int, default=1, metavar='N',
@@ -125,13 +121,12 @@ class PatchEncoder(torch.nn.Module):
         )
 
     def forward(self, input):
-        rearranged_input = input.view(-1, self.grid_size[0] * self.grid_size[1], self.patch_size[0] * self.patch_size[1] * self.in_chans)
-        # rearranged_input = einops.rearrange(
-        #     input,
-        #     "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
-        #     p1=self.patch_size[0],
-        #     p2=self.patch_size[1],
-        # )
+        rearranged_input = einops.rearrange(
+            input,
+            "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
+            p1=self.patch_size[0],
+            p2=self.patch_size[1],
+        )
         positions = torch.arange(start=0, end=self.num_patches, step=1).to(input.device)
         ret = self.projection(rearranged_input)
         ret = ret + self.position_embedding(positions)
