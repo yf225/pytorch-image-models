@@ -214,7 +214,7 @@ def main():
         is_training=True,
         no_aug=True,
         fp16=True,
-        distributed=True,
+        distributed=args.distributed,
     )
 
     # setup loss function
