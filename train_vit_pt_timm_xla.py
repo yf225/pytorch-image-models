@@ -87,6 +87,11 @@ patch_size = 16  # Size of the patches to be extract from the input images
 num_classes = 1000
 num_epochs = 3
 
+if "CUDA_VISIBLE_DEVICES" in os.environ:
+  num_devices = len(os.environ["CUDA_VISIBLE_DEVICES"].split(","))
+else:
+  num_devices = 8
+
 if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
   DEBUG = True
 
@@ -105,7 +110,7 @@ else:
   bits = args.bits
   micro_batch_size = args.micro_batch_size
 
-global_batch_size = micro_batch_size * 8
+global_batch_size = micro_batch_size * num_devices
 
 assert bits in [16, 32]
 if bits == 16:
@@ -162,7 +167,7 @@ class PatchEncoder(torch.nn.Module):
     return encoded
 
 def train_vit():
-  assert xm.xrt_world_size() == 8
+  assert xm.xrt_world_size() == num_devices
   xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
   train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, image_size, num_classes)
@@ -254,7 +259,7 @@ flags = {}
 
 if 'COLAB_TPU_ADDR' in os.environ:
   # Note: Colab only supports start_method='fork'
-  xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
+  xmp.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
 
 if __name__ == "__main__":
-  xmp.spawn(map_fn, args=(flags,), nprocs=8, start_method='fork')
+  xmp.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
