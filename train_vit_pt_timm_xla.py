@@ -8,7 +8,7 @@ cd pytorch-image-models && git pull
 
 # Cloud Shell session disconnects very frequently.
 # This saves stdout and stderr to local file on VM, to persist the output through multiple Cloud Shell sessions.
-python3 train_vit_pt_timm_tpu.py --bits=16 --micro_batch_size=2 >> output.txt 2>&1
+python3 train_vit_pt_timm_xla.py --bits=16 --micro_batch_size=2 >> output.txt 2>&1
 
 # References
 - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
