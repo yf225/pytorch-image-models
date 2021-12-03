@@ -16,6 +16,29 @@ python3 train_vit_pt_timm_xla.py --bits=16 --micro_batch_size=2 >> output.txt 2>
 - https://cloud.google.com/tpu/docs/pytorch-xla-ug-tpu-vm
 """
 
+"""On AWS GPU node
+conda activate torch-1.10
+
+cd /fsx/users/willfeng/repos
+rm -rf ./pytorch-image-models || true
+git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
+cd pytorch-image-models && git pull
+
+export PYTHONPATH=/fsx/users/willfeng/repos/pytorch-image-models:${PYTHONPATH}
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
+train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
+
+CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 \
+train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
+"""
+
 # Colab references
 # - https://colab.research.google.com/github/pytorch/xla/blob/master/contrib/colab/getting-started.ipynb#scrollTo=yUB12htcqU9W
 # - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
