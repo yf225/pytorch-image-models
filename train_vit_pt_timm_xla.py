@@ -64,12 +64,9 @@ import sys
 if './pytorch-image-models' not in sys.path:
   sys.path.append('./pytorch-image-models')
 
-from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
-from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint,\
-    convert_splitbn_model, model_parameters
+from timm.data import create_dataset, create_loader
 from timm.utils import *
 from timm.loss import *
-from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler
 from timm.utils import ApexScaler, NativeScaler
 from timm.models.helpers import build_model_with_cfg
