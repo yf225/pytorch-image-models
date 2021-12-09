@@ -239,8 +239,8 @@ def main():
     try:
         from fvcore.nn import FlopCountAnalysis
         from fvcore.nn import flop_count_table
-        flops = FlopCountAnalysis(model, sample_batch[0])
         if args.local_rank == 0:
+            flops = FlopCountAnalysis(model, sample_batch[0].to("cuda:0"))
             print(flop_count_table(flops))
 
         for epoch in range(start_epoch, num_epochs):
