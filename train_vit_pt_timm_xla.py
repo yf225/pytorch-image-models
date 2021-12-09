@@ -34,7 +34,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 train_vit_pt_timm_xla.py --bits=16 --micro_
 # - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
 # - https://github.com/pytorch/xla/issues/2587
 
-# === Colab 1st cell ===
 # !pip uninstall -y torch || pip uninstall -y torch || pip uninstall -y torch || true
 # !pip uninstall -y torchvision || true
 # !pip uninstall -y torchtext || true
@@ -44,10 +43,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 train_vit_pt_timm_xla.py --bits=16 --micro_
 # # - https://github.com/pytorch/xla/issues/3186
 # !pip install cloud-tpu-client==0.10 torch==1.9.0 torchvision==0.10 https://storage.googleapis.com/tpu-pytorch/wheels/torch_xla-1.9-cp37-cp37m-linux_x86_64.whl
 
-# === Colab 2nd cell ===
-import torch_xla.core.xla_model as xm
-
-# === Colab 3rd cell ===
 import argparse
 import os
 import sys
@@ -60,12 +55,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch_xla
-import torch_xla.distributed.parallel_loader as pl
-import torch_xla.utils.utils as xu
-import torch_xla.distributed.xla_multiprocessing as xmp
-import torch_xla.test.test_utils as test_utils
 
-# === Colab 4th cell ===
 # !rm -rf ./pytorch-image-models || true
 # !git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 # !cd pytorch-image-models && git pull
@@ -84,8 +74,6 @@ from timm.scheduler import create_scheduler
 from timm.utils import ApexScaler, NativeScaler
 from timm.models.helpers import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
-
-# === Colab 5th cell ===
 
 DEBUG = False
 VERBOSE = False
@@ -133,7 +121,7 @@ elif bits == 32:
 
 def xm_master_print_if_verbose(message):
   if VERBOSE:
-    xm.master_print(message, flush=True)
+    torch_xla.core.xla_model.master_print(message, flush=True)
 
 class VitDummyDataset(torch.utils.data.Dataset):
   def __init__(self, dataset_size, num_classes):
@@ -182,8 +170,8 @@ class PatchEncoder(torch.nn.Module):
 def create_dataloader(dataset):
   sampler = torch.utils.data.distributed.DistributedSampler(
     dataset,
-    num_replicas=xm.xrt_world_size(),
-    rank=xm.get_ordinal(),
+    num_replicas=torch_xla.core.xla_model.xrt_world_size(),
+    rank=torch_xla.core.xla_model.get_ordinal(),
   )
   return torch.utils.data.DataLoader(
     dataset,
@@ -193,10 +181,10 @@ def create_dataloader(dataset):
   )
 
 def train_vit():
-  assert xm.xrt_world_size() == num_devices
-  xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
+  assert torch_xla.core.xla_model.xrt_world_size() == num_devices
+  torch_xla.core.xla_model.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
-  train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, num_classes)
+  train_dataset = VitDummyDataset(micro_batch_size * torch_xla.core.xla_model.xrt_world_size() * 10, num_classes)
   train_loader = create_dataloader(train_dataset)
   debug_train_loader = create_dataloader(train_dataset)
   sample_batch = next(iter(debug_train_loader))
@@ -217,7 +205,7 @@ def train_vit():
     )
   )
 
-  device = xm.xla_device()
+  device = torch_xla.core.xla_model.xla_device()
   model = model.to(device).train()
   optim_cls = optim.Adam
   optimizer = optim_cls(
@@ -243,18 +231,18 @@ def train_vit():
       # Warning: this coordination requires the actions performed in each
       #  process are the same. In more technical terms, the graph that
       #  PyTorch/XLA generates must be the same across processes.
-      xm.optimizer_step(optimizer)  # Note: barrier=True not needed when using ParallelLoader
+      torch_xla.core.xla_model.optimizer_step(optimizer)  # Note: barrier=True not needed when using ParallelLoader
       step_duration = time.time() - step_start_time
       step_duration_list.append(step_duration)
       xm_master_print_if_verbose("Step {}, time taken: {}".format(step, step_duration))
       step_start_time = time.time()
 
-  train_device_loader = pl.MpDeviceLoader(train_loader, device)
+  train_device_loader = torch_xla.distributed.parallel_loader.MpDeviceLoader(train_loader, device)
   for epoch in range(1, num_epochs + 1):
-    xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, test_utils.now()))
+    xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, torch_xla.test.test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
 
-  xm.master_print("bits: {}, global_batch_size: {}, micro_batch_size: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
+  torch_xla.core.xla_model.master_print("bits: {}, global_batch_size: {}, micro_batch_size: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
 
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
@@ -263,12 +251,12 @@ def map_fn(index, flags):
   torch.manual_seed(42)
 
   # Acquires the (unique) Cloud TPU core corresponding to this process's index
-  device = xm.xla_device()
+  device = torch_xla.core.xla_model.xla_device()
   if VERBOSE:
-    print("Process", index ,"is using", xm.xla_real_devices([str(device)])[0])
+    print("Process", index ,"is using", torch_xla.core.xla_model.xla_real_devices([str(device)])[0])
 
   # # Barrier to prevent master from exiting before workers connect.
-  # xm.rendezvous('init')
+  # torch_xla.core.xla_model.rendezvous('init')
 
   torch.set_default_dtype(default_dtype)
   train_vit()
@@ -279,7 +267,7 @@ flags = {}
 
 if 'COLAB_TPU_ADDR' in os.environ:
   # Note: Colab only supports start_method='fork'
-  xmp.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
+  torch_xla.distributed.xla_multiprocessing.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
 
 if __name__ == "__main__":
-  xmp.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
+  torch_xla.distributed.xla_multiprocessing.spawn(map_fn, args=(flags,), nprocs=num_devices, start_method='fork')
