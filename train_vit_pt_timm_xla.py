@@ -68,8 +68,7 @@ if './pytorch-image-models' not in sys.path:
 
 from timm.utils import *
 from timm.loss import *
-from timm.models.helpers import build_model_with_cfg
-from timm.models.vision_transformer import VisionTransformer
+from custom_vit_model import create_vit_model
 
 DEBUG = False
 VERBOSE = False
@@ -189,24 +188,7 @@ def train_vit():
 
   torch.manual_seed(42)
 
-  model = VisionTransformer(
-    img_size=image_size, patch_size=patch_size, in_chans=3, num_classes=num_classes, embed_dim=hidden_size, depth=num_layers,
-    num_heads=num_attention_heads, mlp_ratio=4, qkv_bias=True, representation_size=None, distilled=False,
-    drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEncoder, norm_layer=nn.LayerNorm,
-    act_layer=nn.GELU, weight_init=''
-  )
-
-  # model = build_model_with_cfg(
-  #   VisionTransformer,
-  #   "vit_huge_patch{}_{}".format(patch_size, image_size),
-  #   pretrained=False,
-  #   default_cfg={},
-  #   representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
-  #   **dict(
-  #     img_size=image_size, patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
-  #     embed_layer=PatchEncoder,
-  #   )
-  # )
+  model = create_vit_model()
 
   device = torch_xla.core.xla_model.xla_device()
   model = model.to(device).train()
