@@ -199,7 +199,7 @@ def train_vit():
   train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, num_classes)
   train_loader = create_dataloader(train_dataset)
   debug_train_loader = create_dataloader(train_dataset)
-  sample_batch = next(debug_train_loader)
+  sample_batch = next(iter(debug_train_loader))
   print("sample_batch[0].shape: ", sample_batch[0].shape)
   assert sample_batch[0].shape == [args.micro_batch_size, 3, image_size, image_size]
 
