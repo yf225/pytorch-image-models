@@ -134,7 +134,7 @@ class PatchEncoder(torch.nn.Module):
 
 step_duration_list = []
 
-def create_dataloader(dataset):
+def create_dataloader(dataset, args):
   loader_train = create_loader(
     dataset,
     input_size=(3, 224, 224),
