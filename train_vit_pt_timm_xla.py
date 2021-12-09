@@ -55,6 +55,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch_xla
+from torch_xla.distributed import parallel_loader as pl
 from torch_xla.distributed import xla_multiprocessing as xmp
 
 # !rm -rf ./pytorch-image-models || true
@@ -232,7 +233,7 @@ def train_vit():
       xm_master_print_if_verbose("Step {}, time taken: {}".format(step, step_duration))
       step_start_time = time.time()
 
-  train_device_loader = torch_xla.distributed.parallel_loader.MpDeviceLoader(train_loader, device)
+  train_device_loader = pl.MpDeviceLoader(train_loader, device)
   for epoch in range(1, num_epochs + 1):
     xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, torch_xla.test.test_utils.now()))
     train_loop_fn(train_device_loader, epoch)
