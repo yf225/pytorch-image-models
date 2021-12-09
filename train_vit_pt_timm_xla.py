@@ -235,7 +235,7 @@ def train_vit():
 
   train_device_loader = pl.MpDeviceLoader(train_loader, device)
   for epoch in range(1, num_epochs + 1):
-    xm_master_print_if_verbose('Epoch {} train begin {}'.format(epoch, torch_xla.test.test_utils.now()))
+    xm_master_print_if_verbose('Epoch {} train begin'.format(epoch))
     train_loop_fn(train_device_loader, epoch)
 
   torch_xla.core.xla_model.master_print("bits: {}, global_batch_size: {}, micro_batch_size: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
