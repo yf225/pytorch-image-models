@@ -169,7 +169,7 @@ def main():
         default_cfg={},
         representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
         **dict(
-            patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
+            img_size=image_size, patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
             embed_layer=PatchEncoder,
         )
     )
