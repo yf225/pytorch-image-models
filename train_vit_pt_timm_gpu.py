@@ -220,8 +220,8 @@ def main():
 
     # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, num_classes)
-    loader_train = create_dataloader(dataset_train)
-    sample_batch = next(iter(create_dataloader(dataset_train)))
+    loader_train = create_dataloader(dataset_train, args)
+    sample_batch = next(iter(create_dataloader(dataset_train, args)))
     print("sample_batch[0].shape: ", sample_batch[0].shape)
     assert list(sample_batch[0].shape) == [args.micro_batch_size, 3, image_size, image_size]
 
