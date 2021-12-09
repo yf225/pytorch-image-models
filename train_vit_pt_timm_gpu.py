@@ -134,17 +134,6 @@ class PatchEncoder(torch.nn.Module):
 
 step_duration_list = []
 
-def create_dataloader(dataset, args):
-  loader_train = create_loader(
-    dataset,
-    input_size=(3, 224, 224),
-    batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
-    is_training=True,
-    no_aug=True,
-    fp16=True,
-    distributed=args.distributed,
-  )
-
 def main():
     global should_profile
 
@@ -220,8 +209,26 @@ def main():
 
     # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, num_classes)
-    loader_train = create_dataloader(dataset_train, args)
-    sample_batch = next(iter(create_dataloader(dataset_train, args)))
+    loader_train = create_loader(
+        dataset_train,
+        input_size=(3, 224, 224),
+        batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
+        is_training=True,
+        no_aug=True,
+        fp16=True,
+        distributed=args.distributed,
+    )
+
+    sample_batch = next(iter(torch.utils.data.DataLoader(
+        dataset,
+        batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
+        sampler=torch.utils.data.distributed.DistributedSampler(
+            dataset,
+            num_replicas=args.world_size,
+            rank=args.local_rank,
+        ),
+        num_workers=1,
+    )))
     print("sample_batch[0].shape: ", sample_batch[0].shape)
     assert list(sample_batch[0].shape) == [args.micro_batch_size, 3, image_size, image_size]
 
