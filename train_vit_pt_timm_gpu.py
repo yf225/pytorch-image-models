@@ -134,6 +134,17 @@ class PatchEncoder(torch.nn.Module):
 
 step_duration_list = []
 
+def create_dataloader(dataset):
+  loader_train = create_loader(
+    dataset,
+    input_size=(3, 224, 224),
+    batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
+    is_training=True,
+    no_aug=True,
+    fp16=True,
+    distributed=args.distributed,
+  )
+
 def main():
     global should_profile
 
@@ -162,17 +173,24 @@ def main():
 
     random_seed(42, args.rank)
 
-    model = build_model_with_cfg(
-        VisionTransformer,
-        "vit_huge_patch{}_{}".format(patch_size, image_size),
-        pretrained=False,
-        default_cfg={},
-        representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
-        **dict(
-            img_size=image_size, patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
-            embed_layer=PatchEncoder,
-        )
+    model = VisionTransformer(
+        img_size=image_size, patch_size=patch_size, in_chans=3, num_classes=num_classes, embed_dim=hidden_size, depth=num_layers,
+        num_heads=num_attention_heads, mlp_ratio=4, qkv_bias=True, representation_size=None, distilled=False,
+        drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEncoder, norm_layer=nn.LayerNorm,
+        act_layer=nn.GELU, weight_init=''
     )
+
+    # model = build_model_with_cfg(
+    #     VisionTransformer,
+    #     "vit_huge_patch{}_{}".format(patch_size, image_size),
+    #     pretrained=False,
+    #     default_cfg={},
+    #     representation_size=None,  # NOTE: matching vit_tf_tpu_v2.py impl
+    #     **dict(
+    #         img_size=image_size, patch_size=patch_size, embed_dim=hidden_size, depth=num_layers, num_heads=num_attention_heads, num_classes=num_classes,
+    #         embed_layer=PatchEncoder,
+    #     )
+    # )
 
     if args.local_rank == 0:
         print_if_verbose(
@@ -202,21 +220,22 @@ def main():
 
     # create train dataset
     dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, num_classes)
-    loader_train = create_loader(
-        dataset_train,
-        input_size=(3, 224, 224),
-        batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
-        is_training=True,
-        no_aug=True,
-        fp16=True,
-        distributed=args.distributed,
-    )
+    loader_train = create_dataloader(dataset_train)
+    sample_batch = next(iter(create_dataloader(dataset_train)))
+    print("sample_batch[0].shape: ", sample_batch[0].shape)
+    assert list(sample_batch[0].shape) == [args.micro_batch_size, 3, image_size, image_size]
 
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss().to(torch.half)
     train_loss_fn = train_loss_fn.cuda()
 
     try:
+        from fvcore.nn import FlopCountAnalysis
+        from fvcore.nn import flop_count_table
+        flops = FlopCountAnalysis(model, sample_batch[0])
+        if args.local_rank == 0:
+            print(flop_count_table(flops))
+
         for epoch in range(start_epoch, num_epochs):
             if should_profile and args.local_rank == 0:
                 def recorder_enter_hook(module, input):
