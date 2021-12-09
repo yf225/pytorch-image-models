@@ -26,17 +26,7 @@ cd pytorch-image-models && git pull
 
 export PYTHONPATH=/fsx/users/willfeng/repos/pytorch-image-models:${PYTHONPATH}
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
-
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
-train_vit_pt_timm_gpu.py --mode=graph --micro_batch_size=2
-
-CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
-
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 \
-train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 train_vit_pt_timm_xla.py --bits=16 --micro_batch_size=2
 """
 
 # Colab references
@@ -115,8 +105,8 @@ if "CUDA_VISIBLE_DEVICES" in os.environ:
 else:
   num_devices = 8
 
-if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
-  DEBUG = True
+# if 'COLAB_TPU_ADDR' in os.environ:  # Colab, meaning debug mode
+#   DEBUG = True
 
 if DEBUG:
   print("Overwriting hyperparams since we are in debug mode...")
