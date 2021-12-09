@@ -220,7 +220,7 @@ def main():
     )
 
     sample_batch = next(iter(torch.utils.data.DataLoader(
-        dataset,
+        dataset_train,
         batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
         sampler=torch.utils.data.distributed.DistributedSampler(
             dataset,
