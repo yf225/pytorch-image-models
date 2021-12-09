@@ -89,16 +89,15 @@ def print_if_verbose(msg):
         print(msg, flush=True)
 
 class VitDummyDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_size, crop_size, num_classes):
+    def __init__(self, dataset_size, num_classes):
         self.dataset_size = dataset_size
-        self.crop_size = crop_size
         self.num_classes = num_classes
 
     def __len__(self):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(3, self.crop_size, self.crop_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
+        return (torch.rand(3, image_size, image_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -202,7 +201,7 @@ def main():
         print_if_verbose('Scheduled epochs: {}'.format(num_epochs))
 
     # create train dataset
-    dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, image_size, num_classes)
+    dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, num_classes)
     loader_train = create_loader(
         dataset_train,
         input_size=(3, 224, 224),

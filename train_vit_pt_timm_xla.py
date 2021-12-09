@@ -136,16 +136,15 @@ def xm_master_print_if_verbose(message):
     xm.master_print(message, flush=True)
 
 class VitDummyDataset(torch.utils.data.Dataset):
-  def __init__(self, dataset_size, crop_size, num_classes):
+  def __init__(self, dataset_size, num_classes):
     self.dataset_size = dataset_size
-    self.crop_size = crop_size
     self.num_classes = num_classes
 
   def __len__(self):
     return self.dataset_size
 
   def __getitem__(self, index):
-    return (torch.rand(3, self.crop_size, self.crop_size), torch.randint(self.num_classes, (1,)).item())
+    return (torch.rand(3, image_size, image_size), torch.randint(self.num_classes, (1,)).item())
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -184,7 +183,7 @@ def train_vit():
   assert xm.xrt_world_size() == num_devices
   xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
-  train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, image_size, num_classes)
+  train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, num_classes)
   train_sampler = torch.utils.data.distributed.DistributedSampler(
     train_dataset,
     num_replicas=xm.xrt_world_size(),
