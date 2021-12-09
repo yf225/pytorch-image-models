@@ -223,7 +223,7 @@ def main():
         dataset_train,
         batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
         sampler=torch.utils.data.distributed.DistributedSampler(
-            dataset,
+            dataset_train,
             num_replicas=args.world_size,
             rank=args.local_rank,
         ),
