@@ -179,22 +179,28 @@ class PatchEncoder(torch.nn.Module):
     encoded = self.projection(rearranged_input) + self.position_embedding(positions)
     return encoded
 
+def create_dataloader(dataset):
+  sampler = torch.utils.data.distributed.DistributedSampler(
+    dataset,
+    num_replicas=xm.xrt_world_size(),
+    rank=xm.get_ordinal(),
+  )
+  return torch.utils.data.DataLoader(
+    dataset,
+    batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
+    sampler=sampler,
+    num_workers=1,
+  )
+
 def train_vit():
   assert xm.xrt_world_size() == num_devices
   xm.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
   train_dataset = VitDummyDataset(micro_batch_size * xm.xrt_world_size() * 10, num_classes)
-  train_sampler = torch.utils.data.distributed.DistributedSampler(
-    train_dataset,
-    num_replicas=xm.xrt_world_size(),
-    rank=xm.get_ordinal(),
-  )
-  train_loader = torch.utils.data.DataLoader(
-    train_dataset,
-    batch_size=args.micro_batch_size,  # NOTE: this should be batch size per TPU core, re. https://discuss.pytorch.org/t/72769/2
-    sampler=train_sampler,
-    num_workers=1,
-  )
+  train_loader = create_dataloader(train_dataset)
+  debug_train_loader = create_dataloader(train_dataset)
+  sample_batch = next(debug_train_loader)
+  assert sample_batch[0].shape == [args.micro_batch_size, 3, image_size, image_size]
 
   torch.manual_seed(42)
 
