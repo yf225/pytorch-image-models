@@ -177,7 +177,7 @@ def create_dataloader(dataset):
 
 def train_vit():
   assert torch_xla.core.xla_model.xrt_world_size() == num_devices
-  torch_xla.core.xla_model.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size: {}".format(bits, global_batch_size, micro_batch_size))
+  torch_xla.core.xla_model.master_print("Working on: bits: {}, global_batch_size: {}, micro_batch_size per core: {}".format(bits, global_batch_size, micro_batch_size))
   # create train dataset
   train_dataset = VitDummyDataset(micro_batch_size * torch_xla.core.xla_model.xrt_world_size() * 10, num_classes)
   train_loader = create_dataloader(train_dataset)
@@ -234,7 +234,7 @@ def train_vit():
     xm_master_print_if_verbose('Epoch {} train begin'.format(epoch))
     train_loop_fn(train_device_loader, epoch)
 
-  torch_xla.core.xla_model.master_print("bits: {}, global_batch_size: {}, micro_batch_size: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
+  torch_xla.core.xla_model.master_print("bits: {}, global_batch_size: {}, micro_batch_size per core: {}, median step duration: {:.3f}".format(bits, global_batch_size, micro_batch_size, statistics.median(step_duration_list)))
 
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
