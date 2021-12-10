@@ -181,6 +181,9 @@ default_cfgs = {
 }
 
 
+import os
+
+
 class Attention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
         super().__init__()
@@ -198,9 +201,11 @@ class Attention(nn.Module):
 
     def forward(self, x):
         B, N, C = x.shape
-        # qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        # q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
-        q, k, v = self.query_dense(x), self.key_dense(x), self.value_dense(x)
+        if "USE_OLD_IMPL" in os.environ:
+            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
+        else:
+            q, k, v = self.query_dense(x), self.key_dense(x), self.value_dense(x)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
