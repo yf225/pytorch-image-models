@@ -93,7 +93,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(3, image_size, image_size).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
+        return (torch.rand(image_size, image_size, 3).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
 
 
 step_duration_list = []
@@ -165,7 +165,7 @@ def main():
     dataset_train = VitDummyDataset(args.micro_batch_size * args.num_devices * 10, num_classes)
     loader_train = create_loader(
         dataset_train,
-        input_size=(3, 224, 224),
+        input_size=(image_size, image_size, 3),
         batch_size=args.micro_batch_size,  # NOTE: this should be batch size per GPU, re. https://discuss.pytorch.org/t/72769/2
         is_training=True,
         no_aug=True,
@@ -184,7 +184,7 @@ def main():
         num_workers=1,
     )))
     print("sample_batch[0].shape: ", sample_batch[0].shape)
-    assert list(sample_batch[0].shape) == [args.micro_batch_size, 3, image_size, image_size]
+    assert list(sample_batch[0].shape) == [args.micro_batch_size, image_size, image_size, 3]
 
     # setup loss function
     train_loss_fn = nn.CrossEntropyLoss().to(torch.half)
