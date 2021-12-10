@@ -209,6 +209,9 @@ class Attention(nn.Module):
             print("q.shape: {}, k.shape: {}, v.shape: {}".format(q.shape, k.shape, v.shape))
         else:
             q, k, v = self.query_dense(x), self.key_dense(x), self.value_dense(x)
+            q = q.reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+            k = k.reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+            v = v.reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
             print("q.shape: {}, k.shape: {}, v.shape: {}".format(q.shape, k.shape, v.shape))
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
