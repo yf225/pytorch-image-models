@@ -227,7 +227,9 @@ class Block(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
     def forward(self, x):
-        x = x + self.drop_path(self.attn(self.norm1(x)))
+        out_norm = self.norm1(x)
+        print("out_norm.shape: ", out_norm.shape)
+        x = x + self.drop_path(self.attn(out_norm))
         x = x + self.drop_path(self.mlp(self.norm2(x)))
         return x
 
