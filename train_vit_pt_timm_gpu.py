@@ -192,11 +192,12 @@ def main():
     train_loss_fn = train_loss_fn.cuda()
 
     try:
-        from fvcore.nn import FlopCountAnalysis
-        from fvcore.nn import flop_count_table
-        if args.local_rank == 0:
-            flops = FlopCountAnalysis(model, sample_batch[0].to("cuda:0"))
-            print(flop_count_table(flops))
+        if args.mode == "eager"
+            from fvcore.nn import FlopCountAnalysis
+            from fvcore.nn import flop_count_table
+            if args.local_rank == 0:
+                flops = FlopCountAnalysis(model, sample_batch[0].to("cuda:0"))
+                print(flop_count_table(flops))
 
         for epoch in range(start_epoch, num_epochs):
             if should_profile and args.local_rank == 0 and args.mode == "eager":
