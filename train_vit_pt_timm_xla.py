@@ -188,7 +188,14 @@ def train_vit():
 
   torch.manual_seed(42)
 
-  model = create_vit_model()
+  model = create_vit_model(
+    image_size=image_size,
+    patch_size=patch_size,
+    num_classes=num_classes,
+    hidden_size=hidden_size,
+    num_layers=num_layers,
+    num_attention_heads=num_attention_heads,
+  )
 
   device = torch_xla.core.xla_model.xla_device()
   model = model.to(device).train()

@@ -126,7 +126,14 @@ def main():
 
     random_seed(42, args.rank)
 
-    model = create_vit_model()
+    model = create_vit_model(
+        image_size=image_size,
+        patch_size=patch_size,
+        num_classes=num_classes,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_attention_heads=num_attention_heads,
+    )
 
     if args.local_rank == 0:
         print_if_verbose(

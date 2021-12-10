@@ -36,7 +36,14 @@ class PatchEncoder(torch.nn.Module):
         return ret
 
 
-def create_vit_model():
+def create_vit_model(
+    image_size,
+    patch_size,
+    num_classes,
+    hidden_size,
+    num_layers,
+    num_attention_heads,
+):
     model = VisionTransformer(
         img_size=image_size, patch_size=patch_size, in_chans=3, num_classes=num_classes, embed_dim=hidden_size, depth=num_layers,
         num_heads=num_attention_heads, mlp_ratio=4, qkv_bias=True, representation_size=None, distilled=False,
