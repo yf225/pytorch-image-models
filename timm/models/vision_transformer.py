@@ -373,6 +373,7 @@ class VisionTransformer(nn.Module):
         #         return (x + x_dist) / 2
         # else:
         x = self.head(x)
+        print("x.shape: ", x.shape)
         return x
 
 
