@@ -191,10 +191,12 @@ class Attention(nn.Module):
         head_dim = dim // num_heads
         self.scale = head_dim ** -0.5
 
-        # self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.query_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
-        self.key_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
-        self.value_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
+        if "USE_OLD_IMPL" in os.environ:
+            self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        else:
+            self.query_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
+            self.key_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
+            self.value_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop) if attn_drop > 0. else nn.Identity()
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop) if proj_drop > 0. else nn.Identity()
