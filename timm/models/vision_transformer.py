@@ -218,7 +218,6 @@ class Block(nn.Module):
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
         super().__init__()
         self.norm1 = norm_layer(dim)
-        print(dim, num_heads, qkv_bias, attn_drop, drop)
         self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -228,7 +227,6 @@ class Block(nn.Module):
 
     def forward(self, x):
         out_norm = self.norm1(x)
-        print("out_norm.shape: ", out_norm.shape)
         x = x + self.drop_path(self.attn(out_norm))
         x = x + self.drop_path(self.mlp(self.norm2(x)))
         return x
