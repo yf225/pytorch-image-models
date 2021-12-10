@@ -191,7 +191,7 @@ class Attention(nn.Module):
         head_dim = dim // num_heads
         self.scale = head_dim ** -0.5
 
-        if "USE_OLD_IMPL" in os.environ:
+        if "USE_ORIGINAL_IMPL" in os.environ:
             self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         else:
             self.query_dense = nn.Linear(in_features=dim, out_features=dim, bias=qkv_bias)
@@ -203,7 +203,7 @@ class Attention(nn.Module):
 
     def forward(self, x):
         B, N, C = x.shape
-        if "USE_OLD_IMPL" in os.environ:
+        if "USE_ORIGINAL_IMPL" in os.environ:
             qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
             q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
             print("q.shape: {}, k.shape: {}, v.shape: {}".format(q.shape, k.shape, v.shape))
