@@ -192,7 +192,7 @@ def main():
     train_loss_fn = train_loss_fn.cuda()
 
     try:
-        if args.mode == "eager"
+        if args.mode == "eager":
             from fvcore.nn import FlopCountAnalysis
             from fvcore.nn import flop_count_table
             if args.local_rank == 0:
