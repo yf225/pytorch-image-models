@@ -206,8 +206,10 @@ class Attention(nn.Module):
         if "USE_OLD_IMPL" in os.environ:
             qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
             q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
+            print("q.shape: {}, k.shape: {}, v.shape: {}".format(q.shape, k.shape, v.shape))
         else:
             q, k, v = self.query_dense(x), self.key_dense(x), self.value_dense(x)
+            print("q.shape: {}, k.shape: {}, v.shape: {}".format(q.shape, k.shape, v.shape))
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
