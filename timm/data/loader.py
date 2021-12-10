@@ -86,10 +86,11 @@ class PrefetchLoader:
             with torch.cuda.stream(stream):
                 next_input = next_input.cuda(non_blocking=True)
                 next_target = next_target.cuda(non_blocking=True)
-                if self.fp16:
-                    next_input = next_input.half().sub_(self.mean).div_(self.std)
-                else:
-                    next_input = next_input.float().sub_(self.mean).div_(self.std)
+                next_input = next_input.half()
+                # if self.fp16:
+                #     next_input = next_input.half().sub_(self.mean).div_(self.std)
+                # else:
+                #     next_input = next_input.float().sub_(self.mean).div_(self.std)
                 if self.random_erasing is not None:
                     next_input = self.random_erasing(next_input)
 
