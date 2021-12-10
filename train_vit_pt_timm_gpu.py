@@ -102,6 +102,7 @@ def main():
     global should_profile
 
     args = parser.parse_args()
+    assert not (should_profile and args.mode == "graph")
 
     args.distributed = False
     args.num_devices = 1
@@ -198,7 +199,7 @@ def main():
             print(flop_count_table(flops))
 
         for epoch in range(start_epoch, num_epochs):
-            if should_profile and args.local_rank == 0:
+            if should_profile and args.local_rank == 0 and args.mode == "eager":
                 def recorder_enter_hook(module, input):
                     module._torch_profiler_recorder = torch.autograd.profiler.record_function(str(module.__class__))
                     module._torch_profiler_recorder.__enter__()
@@ -220,7 +221,7 @@ def main():
             train_metrics = train_one_epoch(
                 epoch, model, loader_train, optimizer, train_loss_fn, args)
 
-            if should_profile and args.local_rank == 0:
+            if should_profile and args.local_rank == 0 and args.mode == "eager":
                 prof.__exit__(None, None, None)
                 trace_dir_path = "train_vit_pt_timm_gpu_trace"
                 if not os.path.isdir(trace_dir_path):
