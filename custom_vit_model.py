@@ -47,7 +47,7 @@ def create_vit_model(
     model = VisionTransformer(
         img_size=image_size, patch_size=patch_size, in_chans=3, num_classes=num_classes, embed_dim=hidden_size, depth=num_layers,
         num_heads=num_attention_heads, mlp_ratio=4, qkv_bias=True, representation_size=None, distilled=False,
-        drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEncoder, norm_layer=nn.LayerNorm,
+        drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEncoder, norm_layer=torch.nn.LayerNorm,
         act_layer=nn.GELU, weight_init=''
     )
 
