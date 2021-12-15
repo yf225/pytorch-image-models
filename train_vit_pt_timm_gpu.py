@@ -9,6 +9,8 @@ git clone https://github.com/yf225/pytorch-image-models.git -b vit_dummy_data
 cd pytorch-image-models && git pull
 
 export PYTHONPATH=/fsx/users/willfeng/repos/pytorch-image-models:${PYTHONPATH}
+export PATH=/usr/local/cuda-11.1/bin:${PATH}
+export LD_LIBRARY_PATH=/usr/local/cuda-11.1/lib64:/usr/local/cuda-11.1/extras/CUPTI/lib64:${LD_LIBRARY_PATH}
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 \
 train_vit_pt_timm_gpu.py --mode=eager --micro_batch_size=8
