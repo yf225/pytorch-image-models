@@ -8,7 +8,7 @@ cd pytorch-image-models && git pull
 
 # Cloud Shell session disconnects very frequently.
 # This saves stdout and stderr to local file on VM, to persist the output through multiple Cloud Shell sessions.
-python3 train_vit_pt_timm_xla.py --bits=16 --micro_batch_size=2 >> output.txt 2>&1
+python3 train_vit_pt_timm_xla.py --bits=16 --micro_batch_size=64 >> output.txt 2>&1
 
 # References
 - https://github.com/pytorch/xla/blob/master/contrib/colab/multi-core-alexnet-fashion-mnist.ipynb
@@ -127,7 +127,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
     return self.dataset_size
 
   def __getitem__(self, index):
-    return (torch.rand(image_size, image_size, 3), torch.randint(self.num_classes, (1,)).item())
+    return (torch.zeros(image_size, image_size, 3), torch.zeros(1).item())
 
 
 # NOTE: need this to be consistent with TF-TPU impl
@@ -239,7 +239,6 @@ def train_vit():
 # "Map function": acquires a corresponding Cloud TPU core, creates a tensor on it,
 # and prints its core
 def map_fn(index, flags):
-  # Sets a common random seed - both for initialization and ensuring graph is the same
   torch.manual_seed(42)
 
   # Acquires the (unique) Cloud TPU core corresponding to this process's index

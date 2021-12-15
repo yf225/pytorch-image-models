@@ -50,6 +50,8 @@ def create_vit_model(
         drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEncoder, norm_layer=torch.nn.LayerNorm,
         act_layer=torch.nn.GELU, weight_init=''
     )
+    for w in model.parameters():
+        nn.init.zeros_(w)
 
     # model = build_model_with_cfg(
     #     VisionTransformer,

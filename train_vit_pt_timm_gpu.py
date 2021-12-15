@@ -93,7 +93,7 @@ class VitDummyDataset(torch.utils.data.Dataset):
         return self.dataset_size
 
     def __getitem__(self, index):
-        return (torch.rand(image_size, image_size, 3).to(torch.half), torch.randint(self.num_classes, (1,)).to(torch.long))
+        return (torch.zeros(image_size, image_size, 3).to(torch.half), torch.zeros(1).to(torch.long))
 
 
 step_duration_list = []
