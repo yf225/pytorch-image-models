@@ -202,7 +202,7 @@ def train_vit():
   optim_cls = optim.Adam
   optimizer = optim_cls(
       model.parameters(),
-      lr=0.001,
+      lr=0.,
   )
   loss_fn = nn.CrossEntropyLoss()
 

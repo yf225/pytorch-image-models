@@ -151,7 +151,7 @@ def main():
 
     model = model.cuda()
 
-    optimizer = create_optimizer_v2(model, 'adam', lr=1e-6)
+    optimizer = create_optimizer_v2(model, 'adam', lr=0.)
 
     # setup distributed training
     if args.distributed:
