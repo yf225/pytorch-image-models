@@ -51,7 +51,7 @@ def create_vit_model(
         act_layer=torch.nn.GELU, weight_init=''
     )
     for w in model.parameters():
-        nn.init.zeros_(w)
+        torch.nn.init.zeros_(w)
 
     # model = build_model_with_cfg(
     #     VisionTransformer,
