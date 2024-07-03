@@ -18,9 +18,9 @@ class Mlp(nn.Module):
 
         self.fc1 = nn.Linear(in_features, hidden_features)
         self.act = act_layer()
-        self.drop1 = nn.Dropout(drop_probs[0])
+        self.drop1 = nn.Dropout(drop_probs[0]) if drop_probs[0] > 0. else nn.Identity()
         self.fc2 = nn.Linear(hidden_features, out_features)
-        self.drop2 = nn.Dropout(drop_probs[1])
+        self.drop2 = nn.Dropout(drop_probs[1]) if drop_probs[1] > 0. else nn.Identity()
 
     def forward(self, x):
         x = self.fc1(x)
